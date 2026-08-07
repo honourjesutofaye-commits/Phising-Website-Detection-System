@@ -26,6 +26,40 @@ class ViewModeTests(SimpleTestCase):
         response = index(request)
         self.assertContains(response, "SMS model is not available.")
 
+    @patch("detector.views.analyze")
+    def test_invalid_form_never_calls_analyzer(self, mock_analyze):
+        request = self.factory.post("/analyze/", {"message_type": "email", "sender": "invalid", "subject": "", "body": "   \n  "})
+        response = index(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enter the message content to analyse.")
+        mock_analyze.assert_not_called()
+
+    @patch("detector.views.analyze", side_effect=RuntimeError("model failed"))
+    @patch("detector.views.model_error", return_value=None)
+    def test_unexpected_analysis_error_is_not_a_verdict(self, _mock_model_error, _mock_analyze):
+        request = self.factory.post("/analyze/", {"message_type": "email", "sender": "sender@example.com", "subject": "Hello", "body": "Message"})
+        response = index(request)
+        self.assertContains(response, "Unable to complete the analysis right now. Please try again.")
+        self.assertNotContains(response, "High Risk Detected")
+
+    @patch("detector.views.analyze")
+    @patch("detector.views.model_error", return_value="SMS model could not be loaded. Retrain the model and try again.")
+    def test_corrupt_model_error_never_calls_analyzer(self, _mock_model_error, mock_analyze):
+        request = self.factory.post("/analyze/", {"message_type": "sms", "sender": "GTBank", "subject": "", "body": "Message"})
+        response = index(request)
+        self.assertContains(response, "SMS model could not be loaded.")
+        mock_analyze.assert_not_called()
+
+    @patch("detector.views.ScannedEmail.objects.create")
+    @patch("detector.views.analyze")
+    @patch("detector.views.model_error", return_value=None)
+    def test_sms_subject_is_not_sent_to_analyzer(self, _mock_model_error, mock_analyze, _mock_create):
+        mock_analyze.return_value = {"ml_label": 0, "ml_prob": 5, "rules": [], "final_label": "Low Risk: Safe", "score": 5, "risk_color": "green", "risk_level": "Low Risk", "user_guidance": "Safe", "sms_details": {"final_verdict": "Message Appears Safe"}}
+        request = self.factory.post("/analyze/", {"message_type": "sms", "sender": "GTBank", "subject": "Ignore this", "body": "Your balance is updated."})
+        response = index(request)
+        self.assertEqual(response.status_code, 200)
+        mock_analyze.assert_called_once_with("", "Your balance is updated.", "GTBank", message_type="sms")
+
 
 class ClassifierTests(SimpleTestCase):
     def test_phishing_keywords_raise_risk(self):
@@ -102,6 +136,39 @@ class ClassifierTests(SimpleTestCase):
         form = EmailForm({"message_type": "email", "sender": "invalid", "subject": "Hello", "body": ""})
         self.assertFalse(form.is_valid())
         self.assertIn("sender", form.errors)
+        self.assertIn("body", form.errors)
+
+    def test_form_strips_body_and_accepts_valid_email_sender(self):
+        form = EmailForm({"message_type": "email", "sender": "  support+notice@example.co.uk  ", "subject": "  Update  ", "body": "  Hello there.  "})
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["sender"], "support+notice@example.co.uk")
+        self.assertEqual(form.cleaned_data["subject"], "Update")
+        self.assertEqual(form.cleaned_data["body"], "Hello there.")
+
+    def test_form_rejects_common_malformed_email_addresses(self):
+        for sender in ("plainaddress", "user@", "@example.com", "user@example", "user@@example.com"):
+            with self.subTest(sender=sender):
+                form = EmailForm({"message_type": "email", "sender": sender, "subject": "", "body": "Message"})
+                self.assertFalse(form.is_valid())
+                self.assertIn("sender", form.errors)
+
+    def test_sms_sender_validation_accepts_numbers_short_codes_and_sender_ids(self):
+        for sender in ("+2348012345678", "09123456789", "12345", "GTBank", "DHL-Express"):
+            with self.subTest(sender=sender):
+                form = EmailForm({"message_type": "sms", "sender": sender, "subject": "Do not use", "body": "Normal message"})
+                self.assertTrue(form.is_valid())
+                self.assertEqual(form.cleaned_data["subject"], "")
+
+    def test_sms_sender_validation_rejects_invalid_format(self):
+        form = EmailForm({"message_type": "sms", "sender": "@@@", "subject": "", "body": "Message"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("sender", form.errors)
+
+    def test_input_lengths_are_limited(self):
+        form = EmailForm({"message_type": "email", "sender": "a" * 250 + "@x.com", "subject": "s" * 513, "body": "m" * 10001})
+        self.assertFalse(form.is_valid())
+        self.assertIn("sender", form.errors)
+        self.assertIn("subject", form.errors)
         self.assertIn("body", form.errors)
 
     def test_shortened_url_requires_review(self):
