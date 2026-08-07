@@ -3,7 +3,7 @@ from django.template.loader import render_to_string
 from unittest.mock import patch
 
 from .forms import EmailForm
-from .engine.classifier import calculate_risk_score
+from .engine.classifier import calculate_risk_score, load_model, model_exists, model_path
 from .engine.analyzer import analyze, classify_risk_level
 from .engine.sender_intelligence import inspect_sender
 from .templatetags.sms_display import mask_sms_sender
@@ -19,6 +19,12 @@ class ViewModeTests(SimpleTestCase):
         response = index(request)
 
         self.assertContains(response, 'value="sms"')
+
+    @patch("detector.views.model_error", return_value="SMS model is not available. Run the corresponding training script first.")
+    def test_missing_sms_model_shows_meaningful_error(self, _mock_model_error):
+        request = self.factory.post("/analyze/", {"message_type": "sms", "sender": "08012345678", "subject": "", "body": "Test SMS"})
+        response = index(request)
+        self.assertContains(response, "SMS model is not available.")
 
 
 class ClassifierTests(SimpleTestCase):
@@ -130,6 +136,21 @@ class ClassifierTests(SimpleTestCase):
         result = analyze("", "Reply with your OTP code now to stop your account from being blocked.", "08012345678", "sms")
         self.assertEqual(result["sms_details"]["otp_request"], "Yes")
         self.assertIn("otp_request", [feature["name"] for feature in result["features"]])
+
+    def test_email_and_sms_models_are_independent_and_available(self):
+        self.assertTrue(model_exists("email"))
+        self.assertTrue(model_exists("sms"))
+        self.assertNotEqual(model_path("email"), model_path("sms"))
+        email_vectorizer, email_model = load_model("email")
+        sms_vectorizer, sms_model = load_model("sms")
+        self.assertIsNot(email_vectorizer, sms_vectorizer)
+        self.assertIsNot(email_model, sms_model)
+
+    @patch("detector.engine.analyzer.predict_with_details")
+    def test_analyzer_selects_sms_model_for_sms(self, mock_predict):
+        mock_predict.return_value = {"label": 0, "phishing_probability": 0.1, "model_confidence": 0.9}
+        analyze("", "A routine SMS message", "08012345678", "sms")
+        mock_predict.assert_called_once_with("A routine SMS message", mode="sms")
 
     def test_coursera_is_recognised_as_a_legitimate_domain(self):
         result = analyze("Course update", "Your course schedule has been updated.", "support@coursera.org")

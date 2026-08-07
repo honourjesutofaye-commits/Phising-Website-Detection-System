@@ -129,7 +129,8 @@ def recommendations_for(kinds, risk_level):
 def analyze(subject, body, sender, message_type="email"):
     """Combine ML phishing probability with independently explainable evidence."""
     text = f"{subject or ''} {body or ''}".strip()
-    prediction = predict_with_details(text)
+    # The shared prediction API selects the independent SMS or email model.
+    prediction = predict_with_details(text, mode=message_type)
     phishing_probability = prediction["phishing_probability"]
     model_confidence = prediction["model_confidence"]
     evidence, sender_check = classify_evidence(text, sender, message_type)

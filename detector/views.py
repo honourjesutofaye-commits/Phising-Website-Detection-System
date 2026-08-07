@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .forms import EmailForm
 from .models import ScannedEmail
 from .engine.analyzer import analyze
-from .engine.classifier import model_exists
+from .engine.classifier import model_error
 
 
 def normalize_confidence(value):
@@ -28,6 +28,7 @@ def index(request):
 
     form = EmailForm(request.POST or None, initial={'message_type': requested_mode})
     result = None
+    error_message = None
 
     if request.method == "POST" and form.is_valid():
         message_type = (form.cleaned_data.get('message_type') or requested_mode).strip().lower()
@@ -36,8 +37,11 @@ def index(request):
         body = form.cleaned_data['body']
 
         # ensure model exists
-        if not model_exists():
-            result = {"error": "Model not found. Please train the model first."}
+        error_message = model_error(message_type)
+        if error_message:
+            # Keep the normal result structure empty so templates never attempt
+            # to render a failed analysis as a risk verdict.
+            result = None
         else:
             # run the analyzer (rules + ML)
             analysis = analyze(subject, body, sender, message_type=message_type)
@@ -75,4 +79,4 @@ def index(request):
 
             result = analysis
 
-    return render(request, "detector/index.html", {"form": form, "result": result})
+    return render(request, "detector/index.html", {"form": form, "result": result, "error_message": error_message})
