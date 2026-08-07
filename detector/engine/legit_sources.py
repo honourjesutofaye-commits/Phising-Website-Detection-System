@@ -2,11 +2,14 @@ LEGIT_DOMAINS = [
     "paypal.com",
     "facebook.com",
     "google.com",
+    "github.com",
+    "coursera.org",
     "amazon.com",
     "apple.com",
     "microsoft.com",
     "netflix.com",
     "bankofamerica.com",
     "chase.com",
-    "wellsfargo.com"
+    "wellsfargo.com",
+    "gtbank.com",
 ]

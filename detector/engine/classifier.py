@@ -81,20 +81,37 @@ def calculate_risk_score(text, prediction, confidence):
     }
 
 
-def predict(text):
+def predict_with_details(text):
+    """Return class-aware probabilities without confusing confidence with risk."""
     vec, model = load_model()
     if vec is None or model is None:
-        return None, 0.0
+        return {"label": None, "phishing_probability": 0.0, "model_confidence": 0.0}
 
     try:
         X = vec.transform([text])
         pred = model.predict(X)[0]
-        prob = float(max(model.predict_proba(X)[0]))
-        return pred, prob
+        probabilities = model.predict_proba(X)[0]
+        classes = list(model.classes_)
+        phishing_index = next(
+            (index for index, label in enumerate(classes)
+             if label == 1 or str(label).strip().lower() in {"1", "phishing", "fraud", "fraudulent", "scam"}),
+            None,
+        )
+        return {
+            "label": pred,
+            "phishing_probability": float(probabilities[phishing_index]) if phishing_index is not None else 0.0,
+            "model_confidence": float(max(probabilities)),
+        }
 
     except Exception as e:
         print(f"❌ Prediction error: {str(e)}")
-        return None, 0.0
+        return {"label": None, "phishing_probability": 0.0, "model_confidence": 0.0}
+
+
+def predict(text):
+    """Compatibility wrapper: returns label and phishing probability only."""
+    details = predict_with_details(text)
+    return details["label"], details["phishing_probability"]
 
 
 def check_model():

@@ -1,231 +1,225 @@
+"""Explainable hybrid phishing analysis for email and SMS."""
+import ipaddress
 import re
+from urllib.parse import urlparse
+
 import tldextract
-from .classifier import classify_risk_level, predict
+
+from .classifier import classify_risk_level, predict_with_details
 from .legit_sources import LEGIT_DOMAINS
+from .sender_intelligence import inspect_sender, organisation_findings
 
-# -----------------------------
-# Context phrases
-# -----------------------------
-LEGIT_CONTEXT_PHRASES = [
-    "no action required",
-    "this is to inform you",
-    "successfully completed",
-    "transaction receipt",
-    "payment confirmation",
-    "for your records",
-    "thank you for using",
-    "withdrawal processed",
-    "earnings have been sent",
-]
+URL_PATTERN = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
+SHORT_URL_DOMAINS = {"bit.ly", "tinyurl.com", "goo.gl", "t.co", "ow.ly", "is.gd", "buff.ly", "cutt.ly", "bit.do"}
+RISKY_TLDS = {"xyz", "top", "click", "work", "gq", "tk", "ml", "cf"}
+PRESSURE_PHRASES = {"act now", "immediately", "within 24 hours", "verify now", "urgent action required"}
+THREAT_PHRASES = {"will be suspended", "account locked", "avoid losing", "final warning", "failure to"}
+CREDENTIAL_PHRASES = {"password", "login", "bank details", "card details", "one-time password", "otp code"}
+MONEY_PHRASES = {"lottery", "winner", "prize", "grant", "claim your", "free money", "guaranteed"}
+SAFE_CONTEXT_PHRASES = {"no action required", "for your records", "payment confirmation", "transaction receipt", "appointment is confirmed", "has shipped", "order has shipped"}
 
-PRESSURE_PHRASES = [
-    "act now",
-    "immediately",
-    "within 24 hours",
-    "failure to",
-    "will be suspended",
-    "verify now",
-    "urgent action required",
-]
-
-HIGH_RISK_KEYWORDS = {"urgent", "verify", "click", "password", "suspend"}
-
-SHORT_URL_DOMAINS = {
-    'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly',
-    'is.gd', 'buff.ly', 'cutt.ly', 'bit.do'
-}
-
-# Subtle “too-good-to-be-true” keywords for fake-safe detection
-FAKE_SAFE_KEYWORDS = [
-    "bonus", "free account", "kick-start", "claim now", "limited offer",
-    "click here", "your money", "digital card"
-]
-
-GRANT_SCAM_PATTERNS = [
-    "government assistance",
-    "citizen support grant",
-    "selected for a",
-    "apply now",
-    "within 24 hours",
-    "avoid losing your slot",
-]
-
-SCAM_OFFER_PATTERNS = [
-    "lottery",
-    "winner",
-    "prize",
-    "grant",
-    "government",
-    "claim your",
-    "free money",
-    "guaranteed",
-    "bank details",
-]
-
-# -----------------------------
-# Utility functions
-# -----------------------------
-def check_legit_sender(sender):
-    """Check if sender domain matches known legitimate domains."""
-    if "@" not in sender:
-        return False, sender
-    domain = sender.split("@")[-1].lower()
-    for legit in LEGIT_DOMAINS:
-        if domain.endswith(legit):
-            return True, domain
-    return False, domain
 
 def extract_urls(text):
-    """Extract URLs from text."""
-    return re.findall(r'https?://\S+', text)
+    """Extract complete HTTP(S) URLs while stripping sentence punctuation."""
+    return [match.rstrip(".,;:!?)]}") for match in URL_PATTERN.findall(text or "")]
 
-def check_short_urls(urls):
-    """Detect shortened URLs."""
-    return [u for u in urls if tldextract.extract(u).registered_domain in SHORT_URL_DOMAINS]
 
-# -----------------------------
-# Main analysis function
-# -----------------------------
+def registered_domain(hostname):
+    extracted = tldextract.extract(hostname or "")
+    return extracted.registered_domain.lower() if extracted.registered_domain else (hostname or "").lower()
+
+
+def is_trusted_domain(domain):
+    return any(domain == trusted or domain.endswith("." + trusted) for trusted in LEGIT_DOMAINS)
+
+
+def sender_features(sender, message_type):
+    sender = (sender or "").strip()
+    if message_type == "sms":
+        digits = re.sub(r"\D", "", sender)
+        valid = len(digits) in range(10, 16)
+        return {"valid": valid, "trusted": False, "description": "Phone number format is valid." if valid else "Phone number format is invalid."}
+
+    inspection = inspect_sender(sender)
+    domain = inspection["domain"]
+    trusted = inspection["valid"] and is_trusted_domain(domain)
+    if not inspection["valid"]:
+        description = "Sender address is malformed."
+    elif trusted:
+        description = f"Username: {inspection['username']}; Domain: {domain}; TLD: {inspection['tld']}. Domain matches a recognised organisation."
+    else:
+        description = f"Username: {inspection['username']}; Domain: {domain}; TLD: {inspection['tld']}. Sender format appears consistent and no domain-format warning signs were detected."
+    inspection.update({"trusted": trusted, "description": description, "domain": domain})
+    return inspection
+
+
+def url_features(url):
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    domain = registered_domain(host)
+    findings = []
+    if domain in SHORT_URL_DOMAINS:
+        findings.append(("Shortened URL detected.", 25, "short_url"))
+    try:
+        ipaddress.ip_address(host)
+        findings.append(("Link uses a raw IP address instead of a domain.", 30, "ip_url"))
+    except ValueError:
+        pass
+    if "@" in parsed.netloc:
+        findings.append(("Link contains a misleading @ character.", 25, "url_obfuscation"))
+    suffix = domain.rsplit(".", 1)[-1]
+    if suffix in RISKY_TLDS:
+        findings.append((f"Link uses a higher-risk .{suffix} domain.", 12, "risky_tld"))
+    if host.startswith("xn--"):
+        findings.append(("Link uses an internationalised (punycode) domain.", 20, "punycode_url"))
+    return findings
+
+
+def classify_evidence(text, sender, message_type):
+    """Return deduplicated indicators with documented severity points.
+
+    Points represent severity bands (10=context warning, 20=strong signal,
+    25-30=directly deceptive technical signal), not a count of keywords.
+    """
+    lower = (text or "").lower()
+    evidence = []
+    sender_check = sender_features(sender, message_type)
+    evidence.extend(sender_check.get("findings", []))
+    if sender_check.get("domain"):
+        evidence.extend(organisation_findings(text, sender_check["domain"]))
+    for url in extract_urls(text):
+        evidence.extend(url_features(url))
+    if any(phrase in lower for phrase in PRESSURE_PHRASES):
+        evidence.append(("Urgency language detected.", 10, "urgency"))
+    if any(phrase in lower for phrase in THREAT_PHRASES):
+        evidence.append(("Threat of loss or account action detected.", 15, "threat"))
+    if any(phrase in lower for phrase in CREDENTIAL_PHRASES):
+        evidence.append(("Request for credentials or authentication data detected.", 20, "credential_request"))
+    if message_type == "sms" and re.search(r"\b(?:send|share|reply with|provide|enter)\b[^.]{0,40}\b(?:otp|one[- ]time (?:password|code)|verification code)\b", lower):
+        evidence.append(("SMS requests that you share or provide an OTP/verification code.", 20, "otp_request"))
+    if any(phrase in lower for phrase in MONEY_PHRASES):
+        evidence.append(("Unexpected reward, grant, or money claim detected.", 15, "money_lure"))
+    unique = {kind: (description, points, kind) for description, points, kind in evidence}
+    return list(unique.values()), sender_check
+
+
+def recommendations_for(kinds, risk_level):
+    actions = []
+    if {"short_url", "ip_url", "url_obfuscation", "punycode_url", "risky_tld"} & kinds:
+        actions.append("Do not open the link; visit the organisation through a saved bookmark or typed address instead.")
+    if {"credential_request", "otp_request"} & kinds:
+        actions.append("Do not share passwords, OTPs, card details, or bank details in response to this message.")
+    if {"invalid_sender", "long_domain", "hyphenated_domain", "numeric_domain", "random_domain", "typosquatting", "organisation_mismatch", "public_provider_impersonation"} & kinds:
+        actions.append("Do not reply until the sender address or phone number has been independently verified.")
+    if {"urgency", "threat", "money_lure"} & kinds:
+        actions.append("Ignore pressure to act quickly and verify the request using an official contact method.")
+    if risk_level == "High Risk":
+        actions.append("Report and delete the message after preserving any evidence required by your organisation.")
+    elif risk_level == "Suspicious":
+        actions.append("Verify the message through a trusted channel before taking any action.")
+    else:
+        actions.extend([
+            "Keep normal security habits: verify unexpected requests before sharing personal information.",
+            "Use a trusted contact method if a future message asks you to change account details or make a payment.",
+            "Do not share passwords or one-time codes, even with a message that appears familiar.",
+        ])
+    return list(dict.fromkeys(actions))
+
+
 def analyze(subject, body, sender, message_type="email"):
-    """Hybrid AI + rule-based analysis for email and SMS messages."""
-    text = f"{subject or ''} {body or ''}"
-    text_lower = text.lower()
-    triggered = []
+    """Combine ML phishing probability with independently explainable evidence."""
+    text = f"{subject or ''} {body or ''}".strip()
+    prediction = predict_with_details(text)
+    phishing_probability = prediction["phishing_probability"]
+    model_confidence = prediction["model_confidence"]
+    evidence, sender_check = classify_evidence(text, sender, message_type)
+    evidence_points = min(sum(points for _, points, _ in evidence), 50)
+    kinds = {kind for _, _, kind in evidence}
+    safe_context = [phrase for phrase in SAFE_CONTEXT_PHRASES if phrase in text.lower()]
+    # A recognised sender plus routine transactional wording is positive
+    # evidence. It only offsets a model-only score; it never cancels a red flag.
+    trusted_context_credit = 25 if sender_check.get("trusted") and safe_context and not evidence else 0
 
-    # ---- AI MODEL PREDICTION ----
-    ml_label, ml_prob_raw = predict(text)
-    ml_prob = max(0.0, min(ml_prob_raw, 100.0)) / 100.0  # normalize 0-1
+    # A model may supply at most 65 points. High Risk therefore needs either
+    # strong phishing probability plus evidence, or multiple severe indicators.
+    score = round(max(0, min(100, phishing_probability * 65 + evidence_points - trusted_context_credit)), 1)
+    # A shortened or deliberately obfuscated link cannot be verified safely in
+    # context, so it always requires review even if the text classifier is calm.
+    if {"short_url", "ip_url", "url_obfuscation", "punycode_url"} & kinds:
+        score = max(score, 40)
+    level, color = classify_risk_level(score)
+    safe_signals = []
+    if level == "Low Risk":
+        if not evidence:
+            safe_signals.append("No technical phishing indicators were detected.")
+            safe_signals.append("No urgency, credential request, or deceptive link was detected.")
+        if safe_context:
+            safe_signals.append("The message contains ordinary transactional or informational language.")
+        if sender_check.get("trusted"):
+            safe_signals.append("The sender domain matches a recognised organisation.")
+        elif sender_check.get("valid") and not sender_check.get("findings"):
+            safe_signals.append("The sender format appears consistent and contains no domain-format warning signs.")
+        if not extract_urls(text):
+            safe_signals.append("No links were included for analysis.")
 
-    # ---- SENDER AND URL CHECKS ----
-    is_sms = message_type == "sms"
-    if is_sms:
-        # Phone numbers cannot be verified against the email-domain allow-list.
-        is_legit_sender, sender_domain = True, sender
-    else:
-        is_legit_sender, sender_domain = check_legit_sender(sender)
-    urls = extract_urls(body or "")
-    short_urls = check_short_urls(urls)
-
-    # ---- RULE-BASED ADJUSTMENTS ----
-    rule_risk = 0.0
-
-    if short_urls:
-        rule_risk += 0.25
-        triggered.append(f"Shortened URL detected: {short_urls[0]}")
-
-    if not is_legit_sender:
-        rule_risk += 0.20
-        triggered.append(f"Unrecognized sender domain ({sender_domain})")
-
-    pressure_hits = sum(p in text_lower for p in PRESSURE_PHRASES)
-    if pressure_hits:
-        rule_risk += 0.15
-        triggered.append("Urgency language detected.")
-
-    # ---- FAKE-SAFE DETECTION ----
-    fake_safe_hits = sum(k in text_lower for k in FAKE_SAFE_KEYWORDS)
-    if fake_safe_hits:
-        rule_risk += 0.15 * min(fake_safe_hits, 3)  # max 45% bump
-        triggered.append(f"Fake-safe keywords detected ({fake_safe_hits} hit(s))")
-
-    grant_scam_hits = sum(phrase in text_lower for phrase in GRANT_SCAM_PATTERNS)
-    if grant_scam_hits:
-        rule_risk += 0.35
-        triggered.append("Grant scam pattern detected.")
-
-    scam_offer_hits = sum(phrase in text_lower for phrase in SCAM_OFFER_PATTERNS)
-    if scam_offer_hits:
-        rule_risk += 0.20
-        triggered.append("Suspicious offer or reward pattern detected.")
-
-    # ---- ADJUSTED PROBABILITY ----
-    adjusted_prob = max(0.0, min(ml_prob + rule_risk, 1.0))
-
-    # ---- FINAL VERDICT ----
-    risk_score = round(adjusted_prob * 100, 1)
-    level, color = classify_risk_level(risk_score)
-
-    if level == "High Risk":
-        final_label = "High Risk: Fraudulent"
-    elif level == "Suspicious":
-        final_label = "Needs Review: Suspicious"
-    else:
-        final_label = "Low Risk: Safe"
-
-    # ---- CONTEXT HITS ----
-    legit_context_hits = sum(p in text_lower for p in LEGIT_CONTEXT_PHRASES)
-
-    # ---- EXPLANATION OBJECT ----
-    score_explanation = {
-        "rules_triggered": ", ".join(triggered) if triggered else "None",
-        "sender_check": (
-            "Phone number supplied; carrier verification is not available"
-            if is_sms
-            else (
-                "Recognized legitimate sender"
-                if is_legit_sender
-                else f"Unrecognized sender domain ({sender_domain})"
-            )
-        ),
-        "urls_found": ", ".join(urls) if urls else "None",
-        "ai_confidence": f"{round(adjusted_prob * 100, 1)}%",
-        "context_hits": legit_context_hits,
-        "pressure_hits": pressure_hits,
-        "fake_safe_hits": fake_safe_hits,
+    final_label = {"Low Risk": "Low Risk: Safe", "Suspicious": "Needs Review: Suspicious", "High Risk": "High Risk: Fraudulent"}[level]
+    message_name = "SMS" if message_type == "sms" else "email"
+    guidance = {
+        "Low Risk": f"This {message_name} has low observed phishing risk. Low risk is not a guarantee; remain cautious with unexpected requests.",
+        "Suspicious": f"This {message_name} has warning signs that should be verified before you act.",
+        "High Risk": f"This {message_name} contains strong phishing indicators. Do not click links, reply, or share information.",
+    }[level]
+    sms_verdict = "Message Appears Safe" if level == "Low Risk" else "Message Appears Suspicious"
+    sms_details = {
+        "message_type": "SMS",
+        "links_detected": ", ".join(extract_urls(text)) or "None",
+        "phone_number": sender if message_type == "sms" else "Not applicable",
+        "credential_request": "Yes" if {"credential_request", "otp_request"} & kinds else "No",
+        "otp_request": "Yes" if "otp_request" in kinds else "No",
+        "urgency_language": "Yes" if "urgency" in kinds else "No",
+        "threat_language": "Yes" if "threat" in kinds else "No",
+        "prize_money_lure": "Yes" if "money_lure" in kinds else "No",
+        "final_verdict": sms_verdict,
     }
-
-    # ---- USER GUIDANCE ----
-    message_name = "message" if is_sms else "email"
-    if level == "High Risk":
-        user_guidance = (
-            f"This {message_name} shows strong phishing indicators. Do not click links, open attachments, or reply. "
-            "Treat it as malicious and report it if appropriate."
-        )
-        recommended_actions = [
-            "Do not click any links or open attachments.",
-            "Report the message to your email provider or security team.",
-            "Delete it from your inbox and warn others if it appears to be spoofed."
-        ]
-        safe_signals = []
-    elif level == "Suspicious":
-        user_guidance = (
-            f"This {message_name} has several warning signs. Verify the sender through a trusted channel before acting. "
-            "Avoid clicking links until you confirm it is legitimate."
-        )
-        recommended_actions = [
-            "Verify the sender through a trusted contact method.",
-            "Avoid clicking links or downloading files until the request is confirmed.",
-            "If the request seems urgent, contact the organization directly using a known phone number or website."
-        ]
-        safe_signals = []
+    if message_type == "sms":
+        if level == "Low Risk":
+            recommended_actions = [
+                "This SMS shows no strong phishing indicators; continue normal caution with unexpected messages.",
+                "Do not share passwords or one-time codes unless you initiated the request through a trusted service.",
+            ]
+        else:
+            recommended_actions = [
+                "Do not click links in this SMS.",
+                "Verify the sender independently using a trusted contact method.",
+                "Do not share personal information, passwords, or one-time codes.",
+                "Report the SMS to your provider or organisation if appropriate.",
+            ]
     else:
-        user_guidance = (
-            f"This {message_name} appears low risk, but remain cautious. "
-            "Double-check unexpected requests and avoid sharing personal details."
-        )
-        recommended_actions = [
-            "Keep the message in your records and monitor for follow-up requests.",
-            "If you were expecting this communication, verify it through a trusted channel.",
-            "Continue to avoid sharing personal details unless you recognize the sender."
-        ]
-        safe_signals = [
-            "The message uses ordinary, non-threatening language.",
-            "It does not present a strong request for immediate action.",
-            "No attachments were provided for analysis."
-        ]
+        recommended_actions = recommendations_for(kinds, level)
 
-    # ---- FINAL RESPONSE ----
     return {
         "final_label": final_label,
-        "ml_label": "Fraudulent" if ml_label == 1 else "Safe",
-        "ml_prob": round(ml_prob * 100, 1),   # pure model confidence
-        "score": risk_score,
+        "ml_label": "Fraudulent" if phishing_probability >= 0.5 else "Safe",
+        "ml_prob": round(model_confidence * 100, 1),
+        "phishing_probability": round(phishing_probability * 100, 1),
+        "model_confidence": round(model_confidence * 100, 1),
+        "score": score,
         "risk_level": level,
         "risk_color": color,
-        "rules": triggered,
-        "details": score_explanation,
-        "urls": urls,
-        "user_guidance": user_guidance,
+        "rules": [description for description, _, _ in evidence],
+        "features": [{"name": kind, "weight": points, "description": description} for description, points, kind in evidence],
+        "details": {
+            "rules_triggered": ", ".join(description for description, _, _ in evidence) or "None",
+            "sender_check": sender_check["description"],
+            "urls_found": ", ".join(extract_urls(text)) or "None",
+            "phishing_probability": f"{phishing_probability * 100:.1f}%",
+            "model_confidence": f"{model_confidence * 100:.1f}%",
+            "evidence_points": evidence_points,
+            "trusted_context_credit": trusted_context_credit,
+        },
+        "urls": extract_urls(text),
+        "user_guidance": guidance,
         "recommended_actions": recommended_actions,
-        "safe_signals": safe_signals,
+        "safe_signals": safe_signals or ["No strong phishing indicators were detected."],
+        "sms_details": sms_details,
     }

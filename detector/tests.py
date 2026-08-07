@@ -1,9 +1,12 @@
 from django.test import RequestFactory, SimpleTestCase
 from django.template.loader import render_to_string
+from unittest.mock import patch
 
 from .forms import EmailForm
 from .engine.classifier import calculate_risk_score
 from .engine.analyzer import analyze, classify_risk_level
+from .engine.sender_intelligence import inspect_sender
+from .templatetags.sms_display import mask_sms_sender
 from .views import index, normalize_confidence
 
 
@@ -77,6 +80,66 @@ class ClassifierTests(SimpleTestCase):
         self.assertEqual(normalize_confidence(84.3), 84.3)
         self.assertEqual(normalize_confidence(8430), 100)
 
+    @patch("detector.engine.analyzer.predict_with_details")
+    def test_high_confidence_safe_prediction_is_not_high_risk(self, mock_predict):
+        mock_predict.return_value = {
+            "label": 0,
+            "phishing_probability": 0.01,
+            "model_confidence": 0.99,
+        }
+        result = analyze("Receipt", "Thank you for your payment receipt. No action required.", "billing@example.com")
+        self.assertEqual(result["model_confidence"], 99.0)
+        self.assertEqual(result["phishing_probability"], 1.0)
+        self.assertEqual(result["risk_level"], "Low Risk")
+
+    def test_form_rejects_empty_message_and_invalid_sender(self):
+        form = EmailForm({"message_type": "email", "sender": "invalid", "subject": "Hello", "body": ""})
+        self.assertFalse(form.is_valid())
+        self.assertIn("sender", form.errors)
+        self.assertIn("body", form.errors)
+
+    def test_shortened_url_requires_review(self):
+        result = analyze("Update", "Read this at https://bit.ly/example", "news@example.org")
+        self.assertEqual(result["risk_level"], "Suspicious")
+        self.assertIn("Shortened URL detected.", result["rules"])
+
+    def test_sender_parts_and_typosquatting_are_explained(self):
+        inspection = inspect_sender("support@paypa1.com")
+        self.assertEqual(inspection["username"], "support")
+        self.assertEqual(inspection["domain"], "paypa1.com")
+        self.assertEqual(inspection["tld"], ".com")
+        self.assertIn("typosquatting", [finding[2] for finding in inspection["findings"]])
+
+    def test_public_provider_organisation_claim_is_flagged(self):
+        result = analyze("Microsoft security notice", "Microsoft asks you to verify your account.", "support@gmail.com")
+        self.assertIn("public_provider_impersonation", [feature["name"] for feature in result["features"]])
+
+    def test_unknown_domain_is_not_a_warning_by_itself(self):
+        result = analyze("Meeting", "Your appointment is confirmed for Thursday.", "events@communitycentre.org")
+        self.assertNotIn("unverified_sender", [feature["name"] for feature in result["features"]])
+
+    def test_sms_uses_two_user_facing_verdicts_and_sms_recommendations(self):
+        safe = analyze("", "Your verification code is 482913. Do not share this code with anyone.", "+2348012345678", "sms")
+        suspicious = analyze("", "You won a prize. Claim it now at https://bit.ly/claim", "08012345678", "sms")
+        self.assertEqual(safe["sms_details"]["final_verdict"], "Message Appears Safe")
+        self.assertEqual(suspicious["sms_details"]["final_verdict"], "Message Appears Suspicious")
+        self.assertIn("Do not click links in this SMS.", suspicious["recommended_actions"])
+        self.assertEqual(suspicious["sms_details"]["message_type"], "SMS")
+
+    def test_sms_requesting_otp_is_explained(self):
+        result = analyze("", "Reply with your OTP code now to stop your account from being blocked.", "08012345678", "sms")
+        self.assertEqual(result["sms_details"]["otp_request"], "Yes")
+        self.assertIn("otp_request", [feature["name"] for feature in result["features"]])
+
+    def test_coursera_is_recognised_as_a_legitimate_domain(self):
+        result = analyze("Course update", "Your course schedule has been updated.", "support@coursera.org")
+        self.assertIn("recognised organisation", result["details"]["sender_check"])
+
+    def test_unknown_clean_domain_uses_neutral_sender_messaging(self):
+        result = analyze("Meeting", "Your appointment is confirmed for Thursday.", "events@communitycentre.org")
+        self.assertNotIn("unverified", result["details"]["sender_check"].lower())
+        self.assertIn("no domain-format warning signs", result["details"]["sender_check"].lower())
+
 
 class ResultLayoutTests(SimpleTestCase):
     def render_result(self, level, color, score):
@@ -112,5 +175,39 @@ class ResultLayoutTests(SimpleTestCase):
         html = self.render_result("High Risk", "red", 91)
         self.assertIn("High Risk Detected", html)
         self.assertIn("status-red", html)
-        self.assertIn("left:91%", html)
+        self.assertIn("left:clamp(10px, 91%, calc(100% - 10px))", html)
         self.assertNotIn("Threat Risk Level", html)
+
+    def test_sms_result_hides_score_and_uses_sms_details(self):
+        result = {
+            "risk_level": "High Risk", "risk_color": "red", "score": 91, "ml_prob": 91,
+            "message_type": "sms", "final_label": "High Risk: Fraudulent", "user_guidance": "Verify this SMS.",
+            "rules": ["Shortened URL detected."], "safe_signals": [], "details": {}, "urls": ["https://bit.ly/test"],
+            "recommended_actions": ["Do not click links in this SMS."],
+            "sms_details": {"message_type": "SMS", "links_detected": "https://bit.ly/test", "phone_number": "08012345678", "credential_request": "No", "otp_request": "No", "urgency_language": "No", "threat_language": "No", "prize_money_lure": "No", "final_verdict": "Message Appears Suspicious"},
+        }
+        html = render_to_string("detector/index.html", {"form": EmailForm(), "result": result})
+        self.assertIn("Message Appears Suspicious", html)
+        self.assertIn("SMS Analysis Details", html)
+        self.assertNotIn("Threat score</small>", html)
+        self.assertNotIn("Sender Analysis", html)
+
+    def test_sms_safe_presentation_uses_plain_language_and_masks_sender(self):
+        result = {
+            "risk_level": "Low Risk", "risk_color": "green", "score": 8, "ml_prob": 92,
+            "message_type": "sms", "final_label": "Low Risk: Safe", "user_guidance": "Old engine wording.",
+            "rules": [], "safe_signals": ["Technical engine wording."], "details": {}, "urls": [],
+            "recommended_actions": ["Continue normal caution."],
+            "sms_details": {"message_type": "SMS", "links_detected": "None", "phone_number": "+23491676494943", "credential_request": "No", "otp_request": "No", "urgency_language": "No", "threat_language": "No", "prize_money_lure": "No", "final_verdict": "Message Appears Safe"},
+        }
+        html = render_to_string("detector/index.html", {"form": EmailForm(), "result": result})
+        self.assertIn("No significant phishing indicators were detected in this SMS.", html)
+        self.assertIn("SMS Sender", html)
+        self.assertIn("+234916*****943", html)
+        self.assertIn("No suspicious links detected.", html)
+        self.assertIn("No request for passwords or OTPs detected.", html)
+        self.assertNotIn("Technical engine wording.", html)
+
+    def test_sms_sender_mask_handles_absent_sender(self):
+        self.assertEqual(mask_sms_sender(""), "None")
+        self.assertEqual(mask_sms_sender("None"), "None")

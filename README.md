@@ -27,7 +27,7 @@ The project currently uses a small synthetic demo model rather than a large real
 
 - It may miss newer scam patterns not covered in the training examples.
 - It can produce false positives for legitimate urgent messages.
-- It is not yet a production-grade phishing detector for real-world deployment.
+- It is not yet a production-grade phishing detezctor for real-world deployment.
 
 ---
 
