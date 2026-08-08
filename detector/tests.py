@@ -105,6 +105,34 @@ class ClassifierTests(SimpleTestCase):
 
         self.assertIn("Urgency language detected.", result["rules"])
 
+    @patch("detector.engine.analyzer.predict_with_details")
+    def test_coursera_security_notification_is_not_a_credential_request(self, mock_predict):
+        mock_predict.return_value = {"label": 1, "phishing_probability": 0.95, "model_confidence": 0.95}
+        result = analyze(
+            "New login detected",
+            "We detected a new login. Review your account activity. If this wasn't you, sign in through the official website. Your account security settings were updated.",
+            "no-reply@coursera.org",
+            "email",
+        )
+        self.assertNotIn("credential_request", [feature["name"] for feature in result["features"]])
+        self.assertEqual(result["details"]["trusted_context_credit"], 15)
+        self.assertEqual(result["risk_level"], "Suspicious")
+
+    @patch("detector.engine.analyzer.predict_with_details")
+    def test_explicit_credential_requests_still_trigger_detection(self, mock_predict):
+        mock_predict.return_value = {"label": 1, "phishing_probability": 0.9, "model_confidence": 0.9}
+        examples = (
+            "Your account has been compromised. Enter your password immediately.",
+            "Reply with your OTP to secure your account.",
+            "Enter your verification code to prevent account suspension.",
+        )
+        for body in examples:
+            with self.subTest(body=body):
+                result = analyze("Security alert", body, "notice@unknown-example.com", "email")
+                kinds = [feature["name"] for feature in result["features"]]
+                self.assertIn("credential_request", kinds)
+                self.assertEqual(result["risk_level"], "High Risk")
+
     def test_grant_sms_with_deadline_is_not_marked_safe(self):
         result = analyze(
             "",

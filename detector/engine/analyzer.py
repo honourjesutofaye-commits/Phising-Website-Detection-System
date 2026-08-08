@@ -14,9 +14,21 @@ SHORT_URL_DOMAINS = {"bit.ly", "tinyurl.com", "goo.gl", "t.co", "ow.ly", "is.gd"
 RISKY_TLDS = {"xyz", "top", "click", "work", "gq", "tk", "ml", "cf"}
 PRESSURE_PHRASES = {"act now", "immediately", "within 24 hours", "verify now", "urgent action required"}
 THREAT_PHRASES = {"will be suspended", "account locked", "avoid losing", "final warning", "failure to"}
-CREDENTIAL_PHRASES = {"password", "login", "bank details", "card details", "one-time password", "otp code"}
+# Security words are common in legitimate account notifications.  A credential
+# indicator needs an explicit request to provide authentication information.
+CREDENTIAL_REQUEST_PATTERN = re.compile(
+    r"\b(?:enter|provide|send|share|reply with|disclose|submit|give)\b"
+    r"(?:\s+(?:us|your|the|a|an|my))?\s+"
+    r"(?:password|passcode|pin|otp(?:\s+(?:code|password))?|"
+    r"one[-\s]time (?:password|code)|verification code|"
+    r"(?:debit|credit)?\s*card details?|bank details?|"
+    r"authentication (?:code|details?|information)|login (?:details?|credentials)|"
+    r"(?:account\s+)?credentials?)\b",
+    re.IGNORECASE,
+)
 MONEY_PHRASES = {"lottery", "winner", "prize", "grant", "claim your", "free money", "guaranteed"}
 SAFE_CONTEXT_PHRASES = {"no action required", "for your records", "payment confirmation", "transaction receipt", "appointment is confirmed", "has shipped", "order has shipped"}
+ROUTINE_SECURITY_CONTEXT_PHRASES = {"new login", "account activity", "official website", "password changed", "security settings were updated"}
 
 
 def extract_urls(text):
@@ -93,7 +105,7 @@ def classify_evidence(text, sender, message_type):
         evidence.append(("Urgency language detected.", 10, "urgency"))
     if any(phrase in lower for phrase in THREAT_PHRASES):
         evidence.append(("Threat of loss or account action detected.", 15, "threat"))
-    if any(phrase in lower for phrase in CREDENTIAL_PHRASES):
+    if CREDENTIAL_REQUEST_PATTERN.search(text or ""):
         evidence.append(("Request for credentials or authentication data detected.", 20, "credential_request"))
     if message_type == "sms" and re.search(r"\b(?:send|share|reply with|provide|enter)\b[^.]{0,40}\b(?:otp|one[- ]time (?:password|code)|verification code)\b", lower):
         evidence.append(("SMS requests that you share or provide an OTP/verification code.", 20, "otp_request"))
@@ -137,9 +149,17 @@ def analyze(subject, body, sender, message_type="email"):
     evidence_points = min(sum(points for _, points, _ in evidence), 50)
     kinds = {kind for _, _, kind in evidence}
     safe_context = [phrase for phrase in SAFE_CONTEXT_PHRASES if phrase in text.lower()]
+    routine_security_context = [phrase for phrase in ROUTINE_SECURITY_CONTEXT_PHRASES if phrase in text.lower()]
     # A recognised sender plus routine transactional wording is positive
     # evidence. It only offsets a model-only score; it never cancels a red flag.
-    trusted_context_credit = 25 if sender_check.get("trusted") and safe_context and not evidence else 0
+    if sender_check.get("trusted") and not evidence and safe_context:
+        trusted_context_credit = 25
+    elif sender_check.get("trusted") and not evidence and routine_security_context:
+        # A recognised sender and routine security notice can temper a
+        # model-only false positive, but cannot offset any phishing evidence.
+        trusted_context_credit = 15
+    else:
+        trusted_context_credit = 0
 
     # A model may supply at most 65 points. High Risk therefore needs either
     # strong phishing probability plus evidence, or multiple severe indicators.
