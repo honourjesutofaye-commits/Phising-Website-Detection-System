@@ -1776,17 +1776,45 @@
       const typeInput = document.getElementById('id_message_type');
       const senderLabel = document.getElementById('sender-label');
       const senderInput = document.getElementById('id_sender');
+      const subjectInput = document.getElementById('id_subject');
+      const bodyInput = document.getElementById('id_body');
       const subjectGroup = document.getElementById('subject-group');
       const analysisForm = document.getElementById('analysis-form');
       const analyzeButton = document.getElementById('analyze-button');
       const tabs = document.querySelectorAll('[data-message-type]');
 
 
-      function selectType(type) {
+      /* An email address is not a phone number and an email body is not an
+         SMS, so switching channel starts a fresh message instead of carrying
+         the previous draft across. */
+      function clearMessageFields() {
+
+        [senderInput, subjectInput, bodyInput].forEach(function (field) {
+
+          if (field) {
+            field.value = '';
+          }
+
+        });
+
+
+        /* Validation errors belong to the message that was cleared. */
+        analysisForm
+          && analysisForm
+              .querySelectorAll('.field-error')
+              .forEach(function (error) {
+                error.remove();
+              });
+      }
+
+
+      function selectType(type, options) {
 
         if (!typeInput || !senderLabel || !senderInput || !subjectGroup) {
           return;
         }
+
+        const previousType = typeInput.value;
 
         typeInput.value = type;
 
@@ -1811,13 +1839,25 @@
           'is-hidden',
           sms
         );
+
+
+        /* Only a deliberate change of channel clears the form; the initial
+           page render must keep whatever the server sent back. */
+        if (
+          options
+          && options.clearOnChange
+          && previousType
+          && previousType !== type
+        ) {
+          clearMessageFields();
+        }
       }
 
 
       tabs.forEach(function (tab) {
 
         tab.addEventListener('click', function () {
-          selectType(tab.dataset.messageType);
+          selectType(tab.dataset.messageType, { clearOnChange: true });
         });
 
 
@@ -1830,7 +1870,7 @@
 
             event.preventDefault();
 
-            selectType(tab.dataset.messageType);
+            selectType(tab.dataset.messageType, { clearOnChange: true });
           }
 
         });

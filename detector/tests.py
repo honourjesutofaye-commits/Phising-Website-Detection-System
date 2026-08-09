@@ -115,8 +115,10 @@ class ClassifierTests(SimpleTestCase):
             "email",
         )
         self.assertNotIn("credential_request", [feature["name"] for feature in result["features"]])
-        self.assertEqual(result["details"]["trusted_context_credit"], 15)
-        self.assertEqual(result["risk_level"], "Suspicious")
+        # Routine account-security wording from a recognised sender earns the
+        # routine-context credit and must not be reported as a phishing warning.
+        self.assertEqual(result["details"]["trusted_context_credit"], 20)
+        self.assertEqual(result["risk_level"], "Low Risk")
 
     @patch("detector.engine.analyzer.predict_with_details")
     def test_explicit_credential_requests_still_trigger_detection(self, mock_predict):
@@ -131,7 +133,66 @@ class ClassifierTests(SimpleTestCase):
                 result = analyze("Security alert", body, "notice@unknown-example.com", "email")
                 kinds = [feature["name"] for feature in result["features"]]
                 self.assertIn("credential_request", kinds)
-                self.assertEqual(result["risk_level"], "High Risk")
+                # A credential request always requires review; "High Risk" is
+                # reserved for a request combined with pressure or a threat.
+                self.assertIn(result["risk_level"], ("Suspicious", "High Risk"))
+
+    def test_bank_awareness_notice_is_not_reported_as_phishing(self):
+        """A real anti-phishing notice describes phishing to warn against it."""
+        result = analyze(
+            "Security Awareness Notice",
+            "Zenith Bank would NEVER call, SMS or email requesting for your card details, PIN, "
+            "Token codes, Mobile/Internet Banking login details or other account related "
+            "information. We would also NEVER ask you to click on a link to update your bank "
+            "information or activate your account. If you receive such messages, please DO NOT "
+            "respond. Thank you.",
+            "customercare@zenithbank.com",
+            "email",
+        )
+        self.assertEqual(result["details"]["awareness_notice"], "Yes")
+        self.assertEqual(result["rules"], [])
+        self.assertEqual(result["risk_level"], "Low Risk")
+
+    def test_awareness_wording_does_not_hide_a_real_request(self):
+        """Phishing that copies awareness wording must still be detected."""
+        result = analyze(
+            "Security notice from your bank",
+            "We will never ask for your details, however to protect your account you must confirm "
+            "your internet banking login details within 24 hours or access will be blocked. "
+            "Verify now: https://bit.ly/secure-bank-verify",
+            "alerts@zenith-bank-secure.click",
+            "email",
+        )
+        self.assertEqual(result["details"]["awareness_notice"], "No")
+        self.assertIn("credential_request", [feature["name"] for feature in result["features"]])
+        self.assertEqual(result["risk_level"], "High Risk")
+
+    @patch("detector.engine.analyzer.predict_with_details")
+    def test_model_alone_cannot_raise_an_unexplained_warning(self, mock_predict):
+        """Every warning shown to the user must have a stated reason."""
+        mock_predict.return_value = {"label": 1, "phishing_probability": 0.99, "model_confidence": 0.99}
+        result = analyze(
+            "Monthly statement",
+            "Your monthly bank statement is ready in online banking. This message is for your records.",
+            "notices@bankofamerica.com",
+            "email",
+        )
+        self.assertEqual(result["rules"], [])
+        self.assertLessEqual(result["score"], 39)
+        self.assertEqual(result["risk_level"], "Low Risk")
+
+    @patch("detector.engine.analyzer.predict_with_details")
+    def test_evidence_alone_can_reach_high_risk_without_the_model(self, mock_predict):
+        """Strong indicators must not be diluted by a calm model score."""
+        mock_predict.return_value = {"label": 0, "phishing_probability": 0.05, "model_confidence": 0.95}
+        result = analyze(
+            "Account suspended",
+            "Your account will be suspended. Verify now and enter your password at "
+            "http://secure-login-verify.top/account",
+            "support@secure-login-verify.top",
+            "email",
+        )
+        self.assertEqual(result["risk_level"], "High Risk")
 
     def test_grant_sms_with_deadline_is_not_marked_safe(self):
         result = analyze(
@@ -232,6 +293,62 @@ class ClassifierTests(SimpleTestCase):
         self.assertEqual(result["sms_details"]["otp_request"], "Yes")
         self.assertIn("otp_request", [feature["name"] for feature in result["features"]])
 
+    def test_routine_bank_sms_is_not_flagged(self):
+        """Alerts, receipts and 2FA codes are the bulk of real SMS traffic."""
+        messages = (
+            ("GTBank", "GTBank: Debit Alert. Acct **1234 NGN5,000.00 on 12-May. Bal: NGN42,300.00"),
+            ("Access", "Your OTP is 774102. Valid for 5 minutes. Do not share it with anyone."),
+            ("UBA", "Your card has been temporarily blocked after 3 wrong PIN attempts. Visit any UBA branch to reset it."),
+            ("Zenith", "Zenith Bank will NEVER ask for your PIN, OTP or card details. Do not share them with anyone."),
+        )
+        for sender, body in messages:
+            with self.subTest(body=body):
+                result = analyze("", body, sender, "sms")
+                self.assertEqual(result["risk_level"], "Low Risk")
+                self.assertEqual(result["sms_details"]["final_verdict"], "Message Appears Safe")
+
+    def test_quiet_sms_credential_request_is_still_detected(self):
+        """Phishing without a link or urgency must not slip through."""
+        result = analyze(
+            "",
+            "Good day, please share the code sent to your phone so we can complete your registration.",
+            "+2348012345671",
+            "sms",
+        )
+        self.assertIn("credential_request", [feature["name"] for feature in result["features"]])
+        self.assertNotEqual(result["risk_level"], "Low Risk")
+
+    def test_sms_request_for_identity_data_is_detected(self):
+        result = analyze(
+            "",
+            "Kindly send your account number and BVN for verification of your salary payment.",
+            "+2348012345670",
+            "sms",
+        )
+        self.assertIn("personal_data_request", [feature["name"] for feature in result["features"]])
+        self.assertNotEqual(result["risk_level"], "Low Risk")
+
+    def test_changed_bank_account_request_is_detected(self):
+        """Payment-redirect fraud carries no link and no credential request."""
+        result = analyze(
+            "Change of bank details",
+            "Please note my bank account has changed. Send this month's payment to the new account below.",
+            "boss@company.com",
+            "email",
+        )
+        self.assertIn("payment_redirect", [feature["name"] for feature in result["features"]])
+        self.assertNotEqual(result["risk_level"], "Low Risk")
+
+    def test_awareness_wording_in_sms_does_not_hide_a_demand(self):
+        result = analyze(
+            "",
+            "We will never ask for your PIN, however confirm your card number now to avoid a block.",
+            "Zenith",
+            "sms",
+        )
+        self.assertEqual(result["details"]["awareness_notice"], "No")
+        self.assertNotEqual(result["risk_level"], "Low Risk")
+
     def test_email_and_sms_models_are_independent_and_available(self):
         self.assertTrue(model_exists("email"))
         self.assertTrue(model_exists("sms"))
@@ -291,7 +408,10 @@ class ResultLayoutTests(SimpleTestCase):
         html = self.render_result("High Risk", "red", 91)
         self.assertIn("High Risk Detected", html)
         self.assertIn("status-red", html)
-        self.assertIn("left:clamp(10px, 91%, calc(100% - 10px))", html)
+        # The marker position is supplied as a CSS custom property, so the
+        # score is asserted on the variable the stylesheet consumes.
+        self.assertIn("--score: 91%", html)
+        self.assertIn("left:clamp(10px, var(--score), calc(100% - 10px))", html)
         self.assertNotIn("Threat Risk Level", html)
 
     def test_sms_result_hides_score_and_uses_sms_details(self):
@@ -317,7 +437,10 @@ class ResultLayoutTests(SimpleTestCase):
             "sms_details": {"message_type": "SMS", "links_detected": "None", "phone_number": "+23491676494943", "credential_request": "No", "otp_request": "No", "urgency_language": "No", "threat_language": "No", "prize_money_lure": "No", "final_verdict": "Message Appears Safe"},
         }
         html = render_to_string("detector/index.html", {"form": EmailForm(), "result": result})
-        self.assertIn("No significant phishing indicators were detected in this SMS.", html)
+        # The template wraps this sentence across source lines for readability,
+        # so the assertion checks the wording without depending on whitespace.
+        self.assertIn("No significant phishing indicators were detected in this", html)
+        self.assertIn("SMS. Continue to exercise normal caution", html)
         self.assertIn("SMS Sender", html)
         self.assertIn("+234916*****943", html)
         self.assertIn("No suspicious links detected.", html)

@@ -5,7 +5,7 @@ They analyse only the sender text supplied to the application.
 """
 import re
 
-PUBLIC_EMAIL_PROVIDERS = {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"}
+PUBLIC_EMAIL_PROVIDERS = {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com", "aol.com", "yandex.com", "mail.com", "gmx.com", "protonmail.com"}
 BRAND_DOMAINS = {
     "paypal": {"paypal.com"}, "facebook": {"facebook.com"},
     "google": {"google.com"}, "amazon": {"amazon.com"},
@@ -13,8 +13,16 @@ BRAND_DOMAINS = {
     "netflix": {"netflix.com"}, "github": {"github.com"},
     "chase": {"chase.com"}, "bank of america": {"bankofamerica.com"},
     "wells fargo": {"wellsfargo.com"}, "gtbank": {"gtbank.com"},
+    "zenith bank": {"zenithbank.com"}, "access bank": {"accessbankplc.com"},
+    "first bank": {"firstbanknigeria.com"}, "flutterwave": {"flutterwave.com"},
+    "paystack": {"paystack.com"}, "dhl": {"dhl.com"},
+    "linkedin": {"linkedin.com"}, "instagram": {"instagram.com"},
 }
-HIGH_IMPACT_ORGANISATIONS = set(BRAND_DOMAINS) | {"bank", "university", "government", "ministry", "central bank"}
+# Generic organisation words are far too common in ordinary business mail to be
+# treated as an impersonation claim on their own, so only named brands and a
+# small set of high-impact institution words are considered.
+GENERIC_ORGANISATIONS = {"central bank", "ministry"}
+HIGH_IMPACT_ORGANISATIONS = set(BRAND_DOMAINS) | GENERIC_ORGANISATIONS
 
 
 def _distance(left, right):
@@ -59,7 +67,7 @@ def inspect_sender(sender):
         findings.append(("Sender domain has an unusually random-looking format.", 10, "random_domain"))
 
     for brand, trusted_domains in BRAND_DOMAINS.items():
-        if domain in trusted_domains or domain.endswith("." + next(iter(trusted_domains))):
+        if domain in trusted_domains or any(domain.endswith("." + item) for item in trusted_domains):
             continue
         brand_compact = _normalise_label(brand)
         # Compare the complete label and its hyphen-separated fragments. This
@@ -76,16 +84,25 @@ def claimed_organisations(text):
     return [name for name in HIGH_IMPACT_ORGANISATIONS if name in lower]
 
 
-def organisation_findings(text, domain):
-    """Identify claims that conflict with the sender's domain/provider."""
+def organisation_findings(text, domain, trusted=False):
+    """Identify claims that conflict with the sender's domain/provider.
+
+    A recognised sender domain is exempt: a message from ``@zenithbank.com``
+    that mentions "Zenith Bank" or names another institution (for example in a
+    fraud-awareness bulletin) is not impersonation.
+    """
+    if trusted:
+        return []
     claims = claimed_organisations(text)
     findings = []
     for claim in claims:
         official_domains = BRAND_DOMAINS.get(claim, set())
         official = any(domain == item or domain.endswith("." + item) for item in official_domains)
+        if official:
+            continue
         if domain in PUBLIC_EMAIL_PROVIDERS:
             findings.append((f"Message claims to represent {claim.title()} but uses public email provider {domain}.", 25, "public_provider_impersonation"))
             continue
-        if official_domains and not official:
+        if official_domains:
             findings.append((f"Message claims to represent {claim.title()} but sender domain {domain} is inconsistent with that organisation.", 20, "organisation_mismatch"))
     return findings
