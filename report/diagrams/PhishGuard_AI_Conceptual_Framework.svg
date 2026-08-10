@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1540" viewBox="0 0 1600 1540" role="img" aria-labelledby="title desc">
+  <title id="title">PhishGuard AI Conceptual Framework</title>
+  <desc id="desc">Editable vector flow from email and SMS inputs through validation, four parallel evidence components, hybrid risk aggregation, risk bands, user outputs, persistence, and a separate evaluation boundary.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#17324d" flood-opacity="0.18"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 z" fill="#315a7d"/>
+    </marker>
+    <style><![CDATA[
+      .title { font-family: 'Times New Roman', serif; font-size: 42px; font-weight: 700; fill: #12263a; }
+      .subtitle { font-family: 'Times New Roman', serif; font-size: 22px; fill: #486581; }
+      .stage { font-family: 'Times New Roman', serif; font-size: 19px; font-weight: 700; letter-spacing: 1.2px; fill: #315a7d; }
+      .box-title { font-family: 'Times New Roman', serif; font-size: 25px; font-weight: 700; fill: #102a43; }
+      .box-body { font-family: 'Times New Roman', serif; font-size: 20px; fill: #243b53; }
+      .small { font-family: 'Times New Roman', serif; font-size: 18px; fill: #334e68; }
+      .white-title { font-family: 'Times New Roman', serif; font-size: 25px; font-weight: 700; fill: #ffffff; }
+      .white-body { font-family: 'Times New Roman', serif; font-size: 19px; fill: #ffffff; }
+      .risk { font-family: 'Times New Roman', serif; font-size: 24px; font-weight: 700; fill: #102a43; }
+      .risk-range { font-family: 'Times New Roman', serif; font-size: 21px; fill: #243b53; }
+      .note-title { font-family: 'Times New Roman', serif; font-size: 21px; font-weight: 700; fill: #7c3e00; }
+      .note-body { font-family: 'Times New Roman', serif; font-size: 18px; fill: #5c3b16; }
+      .connector { stroke: #315a7d; stroke-width: 5; fill: none; marker-end: url(#arrow); }
+      .branch { stroke: #6b879e; stroke-width: 4; fill: none; }
+    ]]></style>
+  </defs>
+
+  <rect width="1600" height="1540" fill="#f7fafc"/>
+  <text x="800" y="64" text-anchor="middle" class="title">PhishGuard AI Conceptual Framework</text>
+  <text x="800" y="101" text-anchor="middle" class="subtitle">Channel-aware machine learning, explainable local evidence and risk-oriented decision support</text>
+
+  <text x="90" y="154" class="stage">1  USER INPUT LAYER</text>
+  <rect x="90" y="174" width="680" height="130" rx="18" fill="#e7f0fa" stroke="#2f6fab" stroke-width="3" filter="url(#shadow)"/>
+  <text x="430" y="216" text-anchor="middle" class="box-title">Email Mode</text>
+  <text x="430" y="252" text-anchor="middle" class="box-body">Sender email address • Optional subject • Message body</text>
+  <text x="430" y="281" text-anchor="middle" class="small">Uses the dedicated email pipeline</text>
+
+  <rect x="830" y="174" width="680" height="130" rx="18" fill="#e8f6f3" stroke="#17806d" stroke-width="3" filter="url(#shadow)"/>
+  <text x="1170" y="216" text-anchor="middle" class="box-title">SMS Mode</text>
+  <text x="1170" y="252" text-anchor="middle" class="box-body">Phone number / short code / sender ID • Message body</text>
+  <text x="1170" y="281" text-anchor="middle" class="small">Uses the dedicated SMS pipeline</text>
+
+  <path d="M430 304 L430 330 L800 330 L800 358" class="branch"/>
+  <path d="M1170 304 L1170 330 L800 330" class="branch"/>
+  <path d="M800 330 L800 358" class="connector"/>
+
+  <text x="90" y="387" class="stage">2  VALIDATION AND CHANNEL ROUTING</text>
+  <rect x="250" y="406" width="1100" height="110" rx="18" fill="#315a7d" filter="url(#shadow)"/>
+  <text x="800" y="450" text-anchor="middle" class="white-title">Validate Required Fields and Route by Selected Medium</text>
+  <text x="800" y="486" text-anchor="middle" class="white-body">Preserve email/SMS field differences • Reject invalid input • Select matching saved model</text>
+  <path d="M800 516 L800 568" class="connector"/>
+
+  <text x="90" y="590" class="stage">3  PARALLEL EVIDENCE LAYER</text>
+  <line x1="215" y1="618" x2="1385" y2="618" class="branch"/>
+  <line x1="215" y1="618" x2="215" y2="644" class="branch"/>
+  <line x1="605" y1="618" x2="605" y2="644" class="branch"/>
+  <line x1="995" y1="618" x2="995" y2="644" class="branch"/>
+  <line x1="1385" y1="618" x2="1385" y2="644" class="branch"/>
+
+  <rect x="65" y="644" width="300" height="190" rx="16" fill="#eef4fb" stroke="#2f6fab" stroke-width="3" filter="url(#shadow)"/>
+  <text x="215" y="685" text-anchor="middle" class="box-title">ML Text Evidence</text>
+  <text x="215" y="724" text-anchor="middle" class="box-body">TF-IDF features</text>
+  <text x="215" y="754" text-anchor="middle" class="box-body">+</text>
+  <text x="215" y="784" text-anchor="middle" class="box-body">Logistic Regression</text>
+  <text x="215" y="814" text-anchor="middle" class="small">Bounded model contribution</text>
+
+  <rect x="455" y="644" width="300" height="190" rx="16" fill="#f4f0fb" stroke="#7254a3" stroke-width="3" filter="url(#shadow)"/>
+  <text x="605" y="685" text-anchor="middle" class="box-title">Content Rules</text>
+  <text x="605" y="724" text-anchor="middle" class="box-body">Urgency • Threats</text>
+  <text x="605" y="754" text-anchor="middle" class="box-body">Credentials / OTP</text>
+  <text x="605" y="784" text-anchor="middle" class="box-body">Payment / reward lures</text>
+  <text x="605" y="814" text-anchor="middle" class="small">Context-aware findings</text>
+
+  <rect x="845" y="644" width="300" height="190" rx="16" fill="#eaf7f4" stroke="#17806d" stroke-width="3" filter="url(#shadow)"/>
+  <text x="995" y="685" text-anchor="middle" class="box-title">Sender / Domain</text>
+  <text x="995" y="724" text-anchor="middle" class="box-body">Format and structure</text>
+  <text x="995" y="754" text-anchor="middle" class="box-body">Brand/domain mismatch</text>
+  <text x="995" y="784" text-anchor="middle" class="box-body">Look-alike heuristics</text>
+  <text x="995" y="814" text-anchor="middle" class="small">Local inspection only</text>
+
+  <rect x="1235" y="644" width="300" height="190" rx="16" fill="#fff4e5" stroke="#bd6b00" stroke-width="3" filter="url(#shadow)"/>
+  <text x="1385" y="685" text-anchor="middle" class="box-title">URL Analysis</text>
+  <text x="1385" y="724" text-anchor="middle" class="box-body">Shorteners • Raw IP</text>
+  <text x="1385" y="754" text-anchor="middle" class="box-body">“@” • Punycode</text>
+  <text x="1385" y="784" text-anchor="middle" class="box-body">Selected risky domains</text>
+  <text x="1385" y="814" text-anchor="middle" class="small">No browsing or redirect fetch</text>
+
+  <path d="M215 834 L215 874 L800 874" class="branch"/>
+  <path d="M605 834 L605 874" class="branch"/>
+  <path d="M995 834 L995 874" class="branch"/>
+  <path d="M1385 834 L1385 874 L800 874" class="branch"/>
+  <path d="M800 874 L800 904" class="connector"/>
+
+  <text x="90" y="925" class="stage">4  HYBRID RISK AGGREGATION</text>
+  <rect x="205" y="944" width="1190" height="122" rx="18" fill="#243b53" filter="url(#shadow)"/>
+  <text x="800" y="989" text-anchor="middle" class="white-title">Combine Evidence into a Bounded 0–100 Risk Score</text>
+  <text x="800" y="1027" text-anchor="middle" class="white-body">ML contribution + weighted findings + contextual safeguards + score limits</text>
+  <text x="800" y="1053" text-anchor="middle" class="white-body">The score is a triage measure, not a calibrated probability of fraud</text>
+  <path d="M800 1066 L800 1115" class="connector"/>
+
+  <text x="90" y="1136" class="stage">5  RISK DECISION</text>
+  <rect x="105" y="1154" width="420" height="104" rx="16" fill="#e6f4ea" stroke="#2e7d32" stroke-width="3"/>
+  <text x="315" y="1197" text-anchor="middle" class="risk">LOW RISK</text>
+  <text x="315" y="1232" text-anchor="middle" class="risk-range">0–39</text>
+
+  <rect x="590" y="1154" width="420" height="104" rx="16" fill="#fff6d6" stroke="#9a7500" stroke-width="3"/>
+  <text x="800" y="1197" text-anchor="middle" class="risk">SUSPICIOUS</text>
+  <text x="800" y="1232" text-anchor="middle" class="risk-range">40–69</text>
+
+  <rect x="1075" y="1154" width="420" height="104" rx="16" fill="#fde9e7" stroke="#b3261e" stroke-width="3"/>
+  <text x="1285" y="1197" text-anchor="middle" class="risk">HIGH RISK</text>
+  <text x="1285" y="1232" text-anchor="middle" class="risk-range">70–100</text>
+
+  <path d="M315 1258 L315 1282 L800 1282" class="branch"/>
+  <path d="M800 1258 L800 1282" class="branch"/>
+  <path d="M1285 1258 L1285 1282 L800 1282" class="branch"/>
+  <path d="M800 1282 L800 1307" class="connector"/>
+
+  <text x="90" y="1327" class="stage">6  DECISION-SUPPORT OUTPUT</text>
+  <rect x="65" y="1346" width="350" height="94" rx="14" fill="#edf2f7" stroke="#486581" stroke-width="2.5"/>
+  <text x="240" y="1384" text-anchor="middle" class="box-title">Verdict and Score</text>
+  <text x="240" y="1416" text-anchor="middle" class="small">Risk-oriented result</text>
+
+  <rect x="438" y="1346" width="350" height="94" rx="14" fill="#edf2f7" stroke="#486581" stroke-width="2.5"/>
+  <text x="613" y="1384" text-anchor="middle" class="box-title">Evidence</text>
+  <text x="613" y="1416" text-anchor="middle" class="small">Findings and safe signals</text>
+
+  <rect x="811" y="1346" width="350" height="94" rx="14" fill="#edf2f7" stroke="#486581" stroke-width="2.5"/>
+  <text x="986" y="1384" text-anchor="middle" class="box-title">User Guidance</text>
+  <text x="986" y="1416" text-anchor="middle" class="small">Explanations and actions</text>
+
+  <rect x="1184" y="1346" width="350" height="94" rx="14" fill="#edf2f7" stroke="#486581" stroke-width="2.5"/>
+  <text x="1359" y="1384" text-anchor="middle" class="box-title">Persistence</text>
+  <text x="1359" y="1416" text-anchor="middle" class="small">Local scan record</text>
+
+  <rect x="65" y="1465" width="1469" height="54" rx="12" fill="#fff8ea" stroke="#bd6b00" stroke-width="2.5" stroke-dasharray="10 8"/>
+  <text x="92" y="1498" class="note-title">Evaluation boundary:</text>
+  <text x="300" y="1498" class="note-body">verified metrics, cross-dataset, temporal, multilingual, adversarial and user testing are required; no automatic self-learning loop is implemented.</text>
+</svg>
