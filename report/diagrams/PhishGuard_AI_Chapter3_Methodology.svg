@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1220" viewBox="0 0 1600 1220">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#315a7d"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#183247" flood-opacity="0.16"/></filter>
+    <style>
+      .title{font-family:'Arial',sans-serif;font-size:38px;font-weight:700;fill:#17324d}.sub{font-family:'Arial',sans-serif;font-size:20px;font-weight:400;fill:#4d6274}.lane{font-family:'Arial',sans-serif;font-size:24px;font-weight:700;fill:#fff}.box-title{font-family:'Arial',sans-serif;font-size:20px;font-weight:700;fill:#17324d}.box-text{font-family:'Arial',sans-serif;font-size:16px;font-weight:400;fill:#425b6f}.small{font-family:'Arial',sans-serif;font-size:16px;font-weight:600;fill:#315a7d}.arrow{stroke:#315a7d;stroke-width:4;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1600" height="1220" fill="#f7fafc"/>
+  <text x="800" y="62" text-anchor="middle" class="title">PHISHGUARD AI DEVELOPMENT METHODOLOGY</text>
+  <text x="800" y="96" text-anchor="middle" class="sub">Iterative design-science development coordinated with a CRISP-DM-informed machine-learning track</text>
+
+  <rect x="75" y="140" width="1450" height="405" rx="28" fill="#eaf2f8" stroke="#8ba8bf" stroke-width="3"/>
+  <rect x="75" y="140" width="250" height="405" rx="28" fill="#315a7d"/>
+  <rect x="285" y="140" width="40" height="405" fill="#315a7d"/>
+  <text x="200" y="290" text-anchor="middle" class="lane">SYSTEM</text><text x="200" y="325" text-anchor="middle" class="lane">DEVELOPMENT</text><text x="200" y="372" text-anchor="middle" style="font-family:'Arial',sans-serif;font-size:17px;font-weight:400;fill:#dceaf4">Design-science and</text><text x="200" y="398" text-anchor="middle" style="font-family:'Arial',sans-serif;font-size:17px;font-weight:400;fill:#dceaf4">incremental refinement</text>
+  <g filter="url(#shadow)">
+    <rect x="365" y="235" width="205" height="165" rx="18" fill="#fff" stroke="#668ba7" stroke-width="3"/><rect x="610" y="235" width="205" height="165" rx="18" fill="#fff" stroke="#668ba7" stroke-width="3"/><rect x="855" y="235" width="205" height="165" rx="18" fill="#fff" stroke="#668ba7" stroke-width="3"/><rect x="1100" y="235" width="205" height="165" rx="18" fill="#fff" stroke="#668ba7" stroke-width="3"/><rect x="1345" y="235" width="140" height="165" rx="18" fill="#fff" stroke="#668ba7" stroke-width="3"/>
+  </g>
+  <text x="468" y="281" text-anchor="middle" class="box-title">Problem</text><text x="468" y="307" text-anchor="middle" class="box-title">Identification</text><text x="468" y="346" text-anchor="middle" class="box-text">Threat and user need</text><text x="468" y="372" text-anchor="middle" class="box-text">defined</text>
+  <text x="713" y="281" text-anchor="middle" class="box-title">Requirements</text><text x="713" y="307" text-anchor="middle" class="box-title">Analysis</text><text x="713" y="346" text-anchor="middle" class="box-text">Functional, quality</text><text x="713" y="372" text-anchor="middle" class="box-text">and ethical constraints</text>
+  <text x="958" y="281" text-anchor="middle" class="box-title">Architecture</text><text x="958" y="307" text-anchor="middle" class="box-title">and Design</text><text x="958" y="346" text-anchor="middle" class="box-text">Layers, data flow</text><text x="958" y="372" text-anchor="middle" class="box-text">and decision logic</text>
+  <text x="1203" y="281" text-anchor="middle" class="box-title">Prototype</text><text x="1203" y="307" text-anchor="middle" class="box-title">Implementation</text><text x="1203" y="346" text-anchor="middle" class="box-text">Django, models</text><text x="1203" y="372" text-anchor="middle" class="box-text">and hybrid analyzer</text>
+  <text x="1415" y="292" text-anchor="middle" class="box-title">Verify</text><text x="1415" y="328" text-anchor="middle" class="box-text">Tests and</text><text x="1415" y="354" text-anchor="middle" class="box-text">evaluation</text>
+  <path d="M570 318H603" class="arrow"/><path d="M815 318H848" class="arrow"/><path d="M1060 318H1093" class="arrow"/><path d="M1305 318H1338" class="arrow"/>
+
+  <rect x="75" y="590" width="1450" height="405" rx="28" fill="#e9f6f2" stroke="#82b5a4" stroke-width="3"/>
+  <rect x="75" y="590" width="250" height="405" rx="28" fill="#16715e"/><rect x="285" y="590" width="40" height="405" fill="#16715e"/>
+  <text x="200" y="742" text-anchor="middle" class="lane">MACHINE</text><text x="200" y="777" text-anchor="middle" class="lane">LEARNING</text><text x="200" y="824" text-anchor="middle" style="font-family:'Arial',sans-serif;font-size:17px;font-weight:400;fill:#dff2ec">CRISP-DM-informed</text><text x="200" y="850" text-anchor="middle" style="font-family:'Arial',sans-serif;font-size:17px;font-weight:400;fill:#dff2ec">channel workflow</text>
+  <g filter="url(#shadow)">
+    <rect x="365" y="685" width="205" height="165" rx="18" fill="#fff" stroke="#5c9c87" stroke-width="3"/><rect x="610" y="685" width="205" height="165" rx="18" fill="#fff" stroke="#5c9c87" stroke-width="3"/><rect x="855" y="685" width="205" height="165" rx="18" fill="#fff" stroke="#5c9c87" stroke-width="3"/><rect x="1100" y="685" width="205" height="165" rx="18" fill="#fff" stroke="#5c9c87" stroke-width="3"/><rect x="1345" y="685" width="140" height="165" rx="18" fill="#fff" stroke="#5c9c87" stroke-width="3"/>
+  </g>
+  <text x="468" y="731" text-anchor="middle" class="box-title">Data</text><text x="468" y="757" text-anchor="middle" class="box-title">Understanding</text><text x="468" y="796" text-anchor="middle" class="box-text">Sources, fields,</text><text x="468" y="822" text-anchor="middle" class="box-text">labels and limits</text>
+  <text x="713" y="731" text-anchor="middle" class="box-title">Data</text><text x="713" y="757" text-anchor="middle" class="box-title">Preparation</text><text x="713" y="796" text-anchor="middle" class="box-text">Clean, map, split</text><text x="713" y="822" text-anchor="middle" class="box-text">and balance</text>
+  <text x="958" y="731" text-anchor="middle" class="box-title">Feature</text><text x="958" y="757" text-anchor="middle" class="box-title">Construction</text><text x="958" y="796" text-anchor="middle" class="box-text">TF-IDF unigrams</text><text x="958" y="822" text-anchor="middle" class="box-text">and bigrams</text>
+  <text x="1203" y="731" text-anchor="middle" class="box-title">Model</text><text x="1203" y="757" text-anchor="middle" class="box-title">Fitting</text><text x="1203" y="796" text-anchor="middle" class="box-text">Email and SMS</text><text x="1203" y="822" text-anchor="middle" class="box-text">Logistic Regression</text>
+  <text x="1415" y="742" text-anchor="middle" class="box-title">Evaluate</text><text x="1415" y="778" text-anchor="middle" class="box-text">Metrics and</text><text x="1415" y="804" text-anchor="middle" class="box-text">error review</text>
+  <path d="M570 768H603" class="arrow"/><path d="M815 768H848" class="arrow"/><path d="M1060 768H1093" class="arrow"/><path d="M1305 768H1338" class="arrow"/>
+
+  <path d="M1203 407V678" class="arrow"/><path d="M1415 857V1032H835" class="arrow"/>
+  <rect x="535" y="1030" width="600" height="130" rx="25" fill="#243b53" filter="url(#shadow)"/>
+  <text x="835" y="1080" text-anchor="middle" style="font-family:'Arial',sans-serif;font-size:24px;font-weight:700;fill:#fff">HYBRID PHISHGUARD AI PROTOTYPE</text><text x="835" y="1116" text-anchor="middle" style="font-family:'Arial',sans-serif;font-size:17px;font-weight:400;fill:#dce6ee">Human-led evaluation and refinement — no automatic self-training</text>
+  <path d="M535 1095H395V470H850" class="arrow"/><text x="416" y="1068" text-anchor="middle" class="small">REFINE</text>
+</svg>
