@@ -1,0 +1,194 @@
+{
+  "evaluation_date": "2026-08-11",
+  "scope_note": "Primary values evaluate the saved SMS text-classifier artefact, not the complete hybrid PhishGuard AI decision system. The deduplicated run is a sensitivity analysis, not the deployed artefact's headline metric.",
+  "environment": {
+    "python": "3.11.2",
+    "django": "5.2.8",
+    "scikit_learn": "1.7.2",
+    "pandas": "2.3.3",
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "joblib": "1.5.2"
+  },
+  "inputs": {
+    "dataset_relative_path": "detector/datasets_sms/SMSSpamCollection",
+    "dataset_sha256": "7d039a24a6083ed9ef0f806ebad56bbb976e3aeb8de05669173bfdc4996c239d",
+    "artefact_relative_path": "detector/engine/sms_model.joblib",
+    "artefact_sha256": "4fc2195d6667bb2efb4de768432b4e27f5a1aff7541439b220867f918a9368d2",
+    "records": 5574,
+    "class_counts": {
+      "0": 4827,
+      "1": 747
+    },
+    "unique_normalised_messages": 5160,
+    "duplicate_rows_beyond_first": 414,
+    "conflicting_label_messages": 0
+  },
+  "documented_split": {
+    "method": "stratified random 80/20 hold-out",
+    "random_state": 42,
+    "train_records": 4459,
+    "train_class_counts": {
+      "0": 3861,
+      "1": 598
+    },
+    "test_records": 1115,
+    "test_class_counts": {
+      "0": 966,
+      "1": 149
+    },
+    "unique_messages_present_in_both_partitions": 123,
+    "test_rows_with_exact_message_in_training": 139,
+    "test_overlap_percentage": 12.466367713004484
+  },
+  "saved_artefact": {
+    "vectorizer_type": "TfidfVectorizer",
+    "vectorizer_vocabulary_size": 15000,
+    "classifier_type": "LogisticRegression",
+    "classes": [
+      0,
+      1
+    ],
+    "primary_holdout": {
+      "n": 1115,
+      "class_counts": {
+        "0": 966,
+        "1": 149
+      },
+      "accuracy": 0.9829596412556054,
+      "precision_positive_class": 0.9391891891891891,
+      "recall_positive_class": 0.9328859060402684,
+      "f1_positive_class": 0.936026936026936,
+      "confusion_matrix_actual_rows_predicted_columns_0_1": [
+        [
+          957,
+          9
+        ],
+        [
+          10,
+          139
+        ]
+      ],
+      "tn": 957,
+      "fp": 9,
+      "fn": 10,
+      "tp": 139
+    },
+    "exact_text_seen_subset": {
+      "n": 139,
+      "class_counts": {
+        "0": 102,
+        "1": 37
+      },
+      "accuracy": 0.9928057553956835,
+      "precision_positive_class": 0.9736842105263158,
+      "recall_positive_class": 1.0,
+      "f1_positive_class": 0.9866666666666667,
+      "confusion_matrix_actual_rows_predicted_columns_0_1": [
+        [
+          101,
+          1
+        ],
+        [
+          0,
+          37
+        ]
+      ],
+      "tn": 101,
+      "fp": 1,
+      "fn": 0,
+      "tp": 37
+    },
+    "exact_text_unseen_subset": {
+      "n": 976,
+      "class_counts": {
+        "0": 864,
+        "1": 112
+      },
+      "accuracy": 0.9815573770491803,
+      "precision_positive_class": 0.9272727272727272,
+      "recall_positive_class": 0.9107142857142857,
+      "f1_positive_class": 0.918918918918919,
+      "confusion_matrix_actual_rows_predicted_columns_0_1": [
+        [
+          856,
+          8
+        ],
+        [
+          10,
+          102
+        ]
+      ],
+      "tn": 856,
+      "fp": 8,
+      "fn": 10,
+      "tp": 102
+    }
+  },
+  "current_environment_retraining_check": {
+    "test_predictions_identical_to_saved_artefact": true,
+    "maximum_absolute_positive_probability_difference": 0.00998892113007821,
+    "retrained_vocabulary_size": 15000,
+    "metrics": {
+      "n": 1115,
+      "class_counts": {
+        "0": 966,
+        "1": 149
+      },
+      "accuracy": 0.9829596412556054,
+      "precision_positive_class": 0.9391891891891891,
+      "recall_positive_class": 0.9328859060402684,
+      "f1_positive_class": 0.936026936026936,
+      "confusion_matrix_actual_rows_predicted_columns_0_1": [
+        [
+          957,
+          9
+        ],
+        [
+          10,
+          139
+        ]
+      ],
+      "tn": 957,
+      "fp": 9,
+      "fn": 10,
+      "tp": 139
+    }
+  },
+  "deduplicated_sensitivity_run": {
+    "method": "drop exact normalised-message duplicates, then stratified 80/20 split with random_state=42 and retrain",
+    "records": 5160,
+    "class_counts": {
+      "0": 4518,
+      "1": 642
+    },
+    "train_records": 4128,
+    "test_records": 1032,
+    "vectorizer_vocabulary_size": 15000,
+    "metrics": {
+      "n": 1032,
+      "class_counts": {
+        "0": 904,
+        "1": 128
+      },
+      "accuracy": 0.9796511627906976,
+      "precision_positive_class": 0.9022556390977443,
+      "recall_positive_class": 0.9375,
+      "f1_positive_class": 0.9195402298850575,
+      "confusion_matrix_actual_rows_predicted_columns_0_1": [
+        [
+          891,
+          13
+        ],
+        [
+          8,
+          120
+        ]
+      ],
+      "tn": 891,
+      "fp": 13,
+      "fn": 8,
+      "tp": 120
+    }
+  }
+}

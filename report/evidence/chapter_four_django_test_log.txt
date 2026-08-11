@@ -1,0 +1,81 @@
+Evaluation date (Africa/Lagos): 2026-08-11
+Command: .report-work/venv/bin/python manage.py test --verbosity 2
+
+test_analyzer_selects_sms_model_for_sms (detector.tests.ClassifierTests.test_analyzer_selects_sms_model_for_sms) ... ok
+test_awareness_wording_does_not_hide_a_real_request (detector.tests.ClassifierTests.test_awareness_wording_does_not_hide_a_real_request)
+Phishing that copies awareness wording must still be detected. ... ok
+test_awareness_wording_in_sms_does_not_hide_a_demand (detector.tests.ClassifierTests.test_awareness_wording_in_sms_does_not_hide_a_demand) ... ok
+test_bank_awareness_notice_is_not_reported_as_phishing (detector.tests.ClassifierTests.test_bank_awareness_notice_is_not_reported_as_phishing)
+A real anti-phishing notice describes phishing to warn against it. ... ok
+test_changed_bank_account_request_is_detected (detector.tests.ClassifierTests.test_changed_bank_account_request_is_detected)
+Payment-redirect fraud carries no link and no credential request. ... ok
+test_confidence_percent_is_not_scaled_twice (detector.tests.ClassifierTests.test_confidence_percent_is_not_scaled_twice) ... ok
+test_coursera_is_recognised_as_a_legitimate_domain (detector.tests.ClassifierTests.test_coursera_is_recognised_as_a_legitimate_domain) ... ok
+test_coursera_security_notification_is_not_a_credential_request (detector.tests.ClassifierTests.test_coursera_security_notification_is_not_a_credential_request) ... ok
+test_email_and_sms_models_are_independent_and_available (detector.tests.ClassifierTests.test_email_and_sms_models_are_independent_and_available) ... ok
+test_evidence_alone_can_reach_high_risk_without_the_model (detector.tests.ClassifierTests.test_evidence_alone_can_reach_high_risk_without_the_model)
+Strong indicators must not be diluted by a calm model score. ... ok
+test_explicit_credential_requests_still_trigger_detection (detector.tests.ClassifierTests.test_explicit_credential_requests_still_trigger_detection) ... ok
+test_form_rejects_common_malformed_email_addresses (detector.tests.ClassifierTests.test_form_rejects_common_malformed_email_addresses) ... ok
+test_form_rejects_empty_message_and_invalid_sender (detector.tests.ClassifierTests.test_form_rejects_empty_message_and_invalid_sender) ... ok
+test_form_strips_body_and_accepts_valid_email_sender (detector.tests.ClassifierTests.test_form_strips_body_and_accepts_valid_email_sender) ... ok
+test_grant_sms_with_deadline_is_not_marked_safe (detector.tests.ClassifierTests.test_grant_sms_with_deadline_is_not_marked_safe) ... ok
+test_high_confidence_safe_prediction_is_not_high_risk (detector.tests.ClassifierTests.test_high_confidence_safe_prediction_is_not_high_risk) ... ok
+test_input_lengths_are_limited (detector.tests.ClassifierTests.test_input_lengths_are_limited) ... ok
+test_model_alone_cannot_raise_an_unexplained_warning (detector.tests.ClassifierTests.test_model_alone_cannot_raise_an_unexplained_warning)
+Every warning shown to the user must have a stated reason. ... ok
+test_phishing_keywords_raise_risk (detector.tests.ClassifierTests.test_phishing_keywords_raise_risk) ... ok
+test_public_provider_organisation_claim_is_flagged (detector.tests.ClassifierTests.test_public_provider_organisation_claim_is_flagged) ... ok
+test_quiet_sms_credential_request_is_still_detected (detector.tests.ClassifierTests.test_quiet_sms_credential_request_is_still_detected)
+Phishing without a link or urgency must not slip through. ... ok
+test_routine_bank_sms_is_not_flagged (detector.tests.ClassifierTests.test_routine_bank_sms_is_not_flagged)
+Alerts, receipts and 2FA codes are the bulk of real SMS traffic. ... ok
+test_safe_analysis_includes_safe_signals_and_actions (detector.tests.ClassifierTests.test_safe_analysis_includes_safe_signals_and_actions) ... ok
+test_safe_message_stays_low_risk (detector.tests.ClassifierTests.test_safe_message_stays_low_risk) ... ok
+test_sender_parts_and_typosquatting_are_explained (detector.tests.ClassifierTests.test_sender_parts_and_typosquatting_are_explained) ... ok
+test_shortened_url_requires_review (detector.tests.ClassifierTests.test_shortened_url_requires_review) ... ok
+test_sms_request_for_identity_data_is_detected (detector.tests.ClassifierTests.test_sms_request_for_identity_data_is_detected) ... ok
+test_sms_requesting_otp_is_explained (detector.tests.ClassifierTests.test_sms_requesting_otp_is_explained) ... ok
+test_sms_sender_validation_accepts_numbers_short_codes_and_sender_ids (detector.tests.ClassifierTests.test_sms_sender_validation_accepts_numbers_short_codes_and_sender_ids) ... ok
+test_sms_sender_validation_rejects_invalid_format (detector.tests.ClassifierTests.test_sms_sender_validation_rejects_invalid_format) ... ok
+test_sms_uses_two_user_facing_verdicts_and_sms_recommendations (detector.tests.ClassifierTests.test_sms_uses_two_user_facing_verdicts_and_sms_recommendations) ... ok
+test_three_level_risk_mapping (detector.tests.ClassifierTests.test_three_level_risk_mapping) ... ok
+test_unknown_clean_domain_uses_neutral_sender_messaging (detector.tests.ClassifierTests.test_unknown_clean_domain_uses_neutral_sender_messaging) ... ok
+test_unknown_domain_is_not_a_warning_by_itself (detector.tests.ClassifierTests.test_unknown_domain_is_not_a_warning_by_itself) ... ok
+test_urgency_language_is_labeled (detector.tests.ClassifierTests.test_urgency_language_is_labeled) ... ok
+test_high_risk_result_shows_high_risk_theme_and_score (detector.tests.ResultLayoutTests.test_high_risk_result_shows_high_risk_theme_and_score) ... ok
+test_safe_result_shows_safe_signals_only (detector.tests.ResultLayoutTests.test_safe_result_shows_safe_signals_only) ... ok
+test_sms_result_hides_score_and_uses_sms_details (detector.tests.ResultLayoutTests.test_sms_result_hides_score_and_uses_sms_details) ... ok
+test_sms_safe_presentation_uses_plain_language_and_masks_sender (detector.tests.ResultLayoutTests.test_sms_safe_presentation_uses_plain_language_and_masks_sender) ... ok
+test_sms_sender_mask_handles_absent_sender (detector.tests.ResultLayoutTests.test_sms_sender_mask_handles_absent_sender) ... ok
+test_suspicious_result_shows_flag_reasons_only (detector.tests.ResultLayoutTests.test_suspicious_result_shows_flag_reasons_only) ... ok
+test_corrupt_model_error_never_calls_analyzer (detector.tests.ViewModeTests.test_corrupt_model_error_never_calls_analyzer) ... ok
+test_invalid_form_never_calls_analyzer (detector.tests.ViewModeTests.test_invalid_form_never_calls_analyzer) ... ok
+test_missing_sms_model_shows_meaningful_error (detector.tests.ViewModeTests.test_missing_sms_model_shows_meaningful_error) ... ok
+test_sms_mode_is_preselected_from_query_string (detector.tests.ViewModeTests.test_sms_mode_is_preselected_from_query_string) ... ok
+test_sms_subject_is_not_sent_to_analyzer (detector.tests.ViewModeTests.test_sms_subject_is_not_sent_to_analyzer) ... ok
+test_unexpected_analysis_error_is_not_a_verdict (detector.tests.ViewModeTests.test_unexpected_analysis_error_is_not_a_verdict) ... Analysis failed for message type email
+Traceback (most recent call last):
+  File "/home/user/Phising-Website-Detection-System/detector/views.py", line 53, in index
+    analysis = analyze(subject, body, sender, message_type=message_type)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+RuntimeError: model failed
+ok
+
+----------------------------------------------------------------------
+Ran 47 tests in 0.971s
+
+OK
+Found 47 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).
+
+Exit status: 0

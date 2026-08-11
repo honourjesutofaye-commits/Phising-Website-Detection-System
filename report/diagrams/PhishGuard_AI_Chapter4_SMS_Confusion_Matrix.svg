@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="980" viewBox="0 0 1400 980">
+  <defs>
+    <linearGradient id="titleBand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#173B57"/>
+      <stop offset="1" stop-color="#2C6388"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#12334A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="980" fill="#F5F8FB"/>
+  <rect x="55" y="45" width="1290" height="890" rx="24" fill="#FFFFFF" stroke="#B9C9D6" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="55" y="45" width="1290" height="120" rx="24" fill="url(#titleBand)"/>
+  <path d="M55 140h1290v25H55z" fill="url(#titleBand)"/>
+  <text x="105" y="101" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="39" font-weight="700">Saved SMS Text Classifier — Confusion Matrix</text>
+  <text x="105" y="140" fill="#DCEAF4" font-family="Arial, sans-serif" font-size="22">Actual labels in rows  •  Predicted labels in columns  •  Positive class: spam (1)</text>
+
+  <g font-family="Arial, sans-serif">
+    <text x="865" y="225" text-anchor="middle" fill="#1D3140" font-size="29" font-weight="700">PREDICTED CLASS</text>
+    <text x="600" y="275" text-anchor="middle" fill="#365267" font-size="25" font-weight="700">Ham (0)</text>
+    <text x="1020" y="275" text-anchor="middle" fill="#365267" font-size="25" font-weight="700">Spam (1)</text>
+
+    <g transform="translate(172,635) rotate(-90)">
+      <text x="0" y="0" text-anchor="middle" fill="#1D3140" font-size="29" font-weight="700">ACTUAL CLASS</text>
+    </g>
+    <text x="330" y="450" text-anchor="middle" fill="#365267" font-size="25" font-weight="700">Ham (0)</text>
+    <text x="330" y="750" text-anchor="middle" fill="#365267" font-size="25" font-weight="700">Spam (1)</text>
+
+    <rect x="420" y="310" width="360" height="270" rx="18" fill="#D9F1E9" stroke="#187A66" stroke-width="4"/>
+    <rect x="800" y="310" width="360" height="270" rx="18" fill="#FFF0D6" stroke="#B36B12" stroke-width="4"/>
+    <rect x="420" y="600" width="360" height="270" rx="18" fill="#FBE2E4" stroke="#B74751" stroke-width="4"/>
+    <rect x="800" y="600" width="360" height="270" rx="18" fill="#DCECF7" stroke="#24658D" stroke-width="4"/>
+
+    <g text-anchor="middle">
+      <text x="600" y="410" fill="#0F5E4D" font-size="31" font-weight="700">TRUE NEGATIVE</text>
+      <text x="600" y="505" fill="#0F5E4D" font-size="82" font-weight="700">957</text>
+      <text x="600" y="548" fill="#365267" font-size="21">Ham correctly classified</text>
+
+      <text x="980" y="410" fill="#95570C" font-size="31" font-weight="700">FALSE POSITIVE</text>
+      <text x="980" y="505" fill="#95570C" font-size="82" font-weight="700">9</text>
+      <text x="980" y="548" fill="#365267" font-size="21">Ham incorrectly flagged</text>
+
+      <text x="600" y="700" fill="#9D303A" font-size="31" font-weight="700">FALSE NEGATIVE</text>
+      <text x="600" y="795" fill="#9D303A" font-size="82" font-weight="700">10</text>
+      <text x="600" y="838" fill="#365267" font-size="21">Spam incorrectly missed</text>
+
+      <text x="980" y="700" fill="#1D5579" font-size="31" font-weight="700">TRUE POSITIVE</text>
+      <text x="980" y="795" fill="#1D5579" font-size="82" font-weight="700">139</text>
+      <text x="980" y="838" fill="#365267" font-size="21">Spam correctly classified</text>
+    </g>
+    <text x="790" y="915" fill="#526A7B" font-size="19" text-anchor="middle">n = 1,115; documented stratified 20% hold-out; evaluated 11 August 2026.</text>
+  </g>
+</svg>
