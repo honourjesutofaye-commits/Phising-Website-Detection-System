@@ -1,5 +1,7 @@
 import os
 import glob
+from pathlib import Path
+
 import pandas as pd
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
@@ -10,11 +12,18 @@ from sklearn.utils import resample
 from joblib import dump
 
 # === CONFIG ===
-DATA_PATH = r"C:\Users\Owner\Documents\Project\Main\final_year_project\datasets"  # <-- folder where your CSVs are
-MODEL_PATH = r"C:\Users\Owner\Documents\Project\Main\final_year_project\detector\engine\email_model.joblib"
+# Paths are relative to this file so the script runs from any checkout.
+DETECTOR_DIR = Path(__file__).resolve().parent
+DATA_PATH = DETECTOR_DIR / "datasets"                              # folder holding the email CSVs
+MODEL_PATH = DETECTOR_DIR / "engine" / "email_model.joblib"        # where the trained model is written
 
 print("📂 Loading datasets...")
+if not DATA_PATH.exists():
+    raise FileNotFoundError(f"Email dataset folder not found at {DATA_PATH}. Place the labelled CSVs there first.")
+
 csv_files = glob.glob(os.path.join(DATA_PATH, "*.csv"))
+if not csv_files:
+    raise FileNotFoundError(f"No CSV files found in {DATA_PATH}.")
 frames = []
 for file in tqdm(csv_files):
     try:

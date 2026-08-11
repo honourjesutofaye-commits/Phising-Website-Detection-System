@@ -15,8 +15,10 @@ is explained the first time it is used.
 5. [Part Two — Fixing SMS](#5-part-two--fixing-sms)
 6. [Part Three — Fixing the Frontend](#6-part-three--fixing-the-frontend)
 7. [How We Proved It Works](#7-how-we-proved-it-works)
-8. [Files That Changed](#8-files-that-changed)
-9. [Glossary](#9-glossary)
+8. [How Links Are Checked (and What That Cannot Tell You)](#8-how-links-are-checked-and-what-that-cannot-tell-you)
+9. [Where the Training Data Lives](#9-where-the-training-data-lives)
+10. [Files That Changed](#10-files-that-changed)
+11. [Glossary](#11-glossary)
 
 ---
 
@@ -490,7 +492,110 @@ templates were fine; the tests were out of date.
 
 ---
 
-## 8. Files That Changed
+## 8. How Links Are Checked (and What That Cannot Tell You)
+
+This question comes up a lot, so it's worth stating plainly:
+
+> **The app never opens, visits, or contacts any link. It never connects to the
+> internet at all.**
+
+Everything you paste stays on your machine. There is no HTTP request, no DNS
+lookup, and no query to any external blocklist service anywhere in the code.
+The only URL-related tools used are `urlparse` (which splits an address into its
+parts as plain text) and `tldextract` (which works out which piece of a domain
+is the registered name).
+
+### What it *can* tell from reading the address
+
+The app judges a link the way a careful person would judge it by eye — from how
+the address is written:
+
+| Check | Example | Why it's suspicious |
+|---|---|---|
+| Shortened link | `https://bit.ly/xyz` | The real destination is hidden from you |
+| Raw IP address | `http://45.13.98.2/pay` | Real companies use domain names, not bare numbers |
+| Risky TLD | `.xyz`, `.top`, `.gq`, `.tk`, `.ml`, `.cf` | Cheap or free endings, heavily used by scammers |
+| Punycode | `xn--pypal-4ve.com` | Non-English characters that render as a lookalike domain |
+| `@` obfuscation | `http://paypal.com@evil.xyz` | Everything before the `@` is ignored by browsers — the real host is `evil.xyz` |
+| Sender mismatch | A "PayPal" email linking to `paypal-verify.top` | The link doesn't belong to the organisation being claimed |
+
+### What it *cannot* know
+
+Because it never looks at the page, the app cannot tell you:
+
+- whether the domain is currently live or already taken down,
+- who registered it, or how recently,
+- what the page actually does when it loads,
+- whether it appears on a known-scam blocklist,
+- or whether a normally-legitimate site was hijacked yesterday.
+
+### Why this is a deliberate choice, not a missing feature
+
+1. **Opening a phishing link to "test" it is genuinely dangerous.** Many scam
+   pages attack the moment they load. Some show the fake login only to visitors
+   who arrive from the scam message, so an automated fetch sees an innocent
+   page and reports a false "safe" — worse than not checking at all.
+2. **It tells the attacker they hit a live target.** Fetching the page reveals
+   the checker's IP address and confirms someone read the message.
+3. **Your data never leaves the machine.** Nothing you paste is transmitted
+   anywhere. There is no telemetry and no third party involved.
+4. **"I don't recognise that domain, so I won't click it" is the correct
+   response anyway** — regardless of what the page turns out to contain.
+
+### If live checking is ever wanted
+
+The safe way to add it is **not** to fetch the page, but to look up the domain
+name against a reputation service such as Google Safe Browsing or URLhaus. That
+would catch domains already reported by others while still never touching the
+page. The trade-offs: it needs an API key, it adds a network call to every scan,
+your scanned domains would be sent to a third party, and it only knows about
+*already-reported* sites — so brand-new scam domains still slip through.
+
+**Current status: deliberately not implemented. The app is fully offline.**
+
+---
+
+## 9. Where the Training Data Lives
+
+The two models were trained on separate datasets, both now stored inside the
+project.
+
+### Email — `detector/datasets/`
+
+Seven labelled CSV files totalling **164,972 emails**, from the Kaggle
+"Phishing Email Dataset" collection (CEAS 2008, Enron, Ling-Spam, Nazario's
+phishing corpus, a Nigerian fraud/419 set, and SpamAssassin). Trained by
+`detector/train_multi_csv.py`. See `detector/datasets/README.md` for the
+per-file breakdown.
+
+These files originally lived outside the project, so the training script could
+not be run. They have been copied in, and the script's paths — which were
+hardcoded to a folder that no longer existed — now resolve relative to the
+project.
+
+### SMS — `detector/datasets_sms/`
+
+The **UCI SMS Spam Collection**: 5,574 real text messages, 4,827 legitimate and
+747 spam. Trained by `detector/train_sms_csv.py`. The `spam.csv` downloaded
+from Kaggle is the same corpus in a different format and sits in the same
+folder for reference.
+
+### One thing to be aware of
+
+`.gitignore` excludes `*.csv`, so the email datasets are **not** committed to
+git — they exist only on this machine. If the project is copied elsewhere, that
+folder must be copied manually or email training will not run.
+
+Also noted while documenting: `phishing_email.csv` (82,486 rows, half the email
+corpus) stores its text in a `text_combined` column, which is not one of the
+columns the training script merges. Those rows currently contribute empty text.
+Fixing it is a one-line change plus a retrain — left alone for now, because
+retraining would replace the model the accuracy figures above were measured
+against.
+
+---
+
+## 10. Files That Changed
 
 | File | What changed |
 |---|---|
@@ -499,6 +604,9 @@ templates were fine; the tests were out of date.
 | `detector/engine/legit_sources.py` | Expanded the list of recognised organisation domains |
 | `detector/templates/detector/index.html` | Tab switching now clears the form fields and stale validation errors |
 | `detector/tests.py` | 5 new regression tests; 2 outdated assertions repaired |
+| `detector/train_multi_csv.py` | Paths were hardcoded to a folder that no longer exists; they are now relative to the project, with a clear error if the data is missing |
+| `detector/datasets/` | **New.** The 7 email training CSVs, copied in, plus a README documenting them |
+| `detector/datasets_sms/spam.csv` | **New.** The Kaggle copy of the SMS corpus, kept for reference |
 
 Nothing was changed in the machine learning models themselves — no retraining
 was involved. All of this is in how the model's opinion is *weighted* and how
@@ -506,14 +614,22 @@ the surrounding evidence is *interpreted*.
 
 ---
 
-## 9. Glossary
+## 11. Glossary
 
 **BVN** — Bank Verification Number, a Nigerian banking identity number. Highly
 sensitive; a frequent target of scams.
 
+**Blocklist** — a published list of web addresses already reported as malicious.
+Checking one requires an internet connection, which this app deliberately does
+not make (see section 8).
+
 **Corpus (plural: corpora)** — a collection of example messages used to test a
 system. Ours are *labelled*, meaning we already know the right answer for each
 one, so we can count exactly how many the app gets wrong.
+
+**DNS lookup** — asking the internet "which computer does this domain name point
+to?" It's the smallest possible network request, and the app doesn't make even
+that one.
 
 **Evidence / indicator / rule** — a specific, explainable check ("this message
 contains a shortened link"). Unlike the model's opinion, evidence can be shown
@@ -545,6 +661,13 @@ but easy to make slightly too loose — which is exactly the bug in section 5.4.
 
 **Score floor** — a minimum score applied when specific evidence is found, so
 the verdict can't be watered down by other factors.
+
+**Static analysis** — judging something by reading it, without running or opening
+it. This app analyses links statically: it reads the address, never visits it.
+
+**TLD (top-level domain)** — the ending of a web address: `.com`, `.org`, `.ng`.
+Some endings are free or near-free to register, which makes them popular with
+scammers.
 
 **Typosquatting** — registering a domain that's one character off a real one
 (`paypa1.com` vs `paypal.com`) to fool people who read too quickly.
