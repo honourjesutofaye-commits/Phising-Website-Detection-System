@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#103B5C"/>
+      <stop offset="1" stop-color="#176B72"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#17324D" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#60788A"/>
+    </marker>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 42px; font-weight: 700; fill: #FFFFFF; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 20px; fill: #DCECF2; }
+      .phase { font-family: Arial, sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 1.2px; }
+      .cardtitle { font-family: Arial, sans-serif; font-size: 25px; font-weight: 700; fill: #17324D; }
+      .body { font-family: Arial, sans-serif; font-size: 18px; fill: #334E62; }
+      .gate { font-family: Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+      .footer { font-family: Arial, sans-serif; font-size: 17px; fill: #445E70; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="#F3F7FA"/>
+  <rect x="45" y="38" width="1510" height="145" rx="26" fill="url(#header)" filter="url(#shadow)"/>
+  <text x="90" y="100" class="title">PhishGuard AI — Responsible Evolution Roadmap</text>
+  <text x="90" y="143" class="subtitle">A gated path from the verified academic prototype to cautiously governed real-world decision support</text>
+
+  <!-- connectors -->
+  <line x1="327" y1="477" x2="357" y2="477" stroke="#60788A" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="632" y1="477" x2="662" y2="477" stroke="#60788A" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="937" y1="477" x2="967" y2="477" stroke="#60788A" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="1242" y1="477" x2="1272" y2="477" stroke="#60788A" stroke-width="6" marker-end="url(#arrow)"/>
+
+  <!-- Phase 1 -->
+  <g filter="url(#shadow)">
+    <rect x="45" y="225" width="282" height="510" rx="20" fill="#FFFFFF" stroke="#167E6B" stroke-width="3"/>
+    <rect x="45" y="225" width="282" height="62" rx="20" fill="#167E6B"/>
+    <rect x="45" y="267" width="282" height="20" fill="#167E6B"/>
+  </g>
+  <text x="72" y="265" class="phase" fill="#FFFFFF">PHASE 1 • FOUNDATION</text>
+  <circle cx="87" cy="333" r="27" fill="#DDF4EE"/>
+  <text x="78" y="342" class="cardtitle" fill="#167E6B">1</text>
+  <text x="124" y="328" class="cardtitle">Evidence</text>
+  <text x="124" y="358" class="cardtitle">Integrity</text>
+  <text x="72" y="411" class="body">• Lawful email manifest</text>
+  <text x="72" y="449" class="body">• Contemporary Nigerian</text>
+  <text x="91" y="476" class="body">email/SMS corpus</text>
+  <text x="72" y="514" class="body">• Deduplicated, grouped</text>
+  <text x="91" y="541" class="body">and temporal splits</text>
+  <text x="72" y="579" class="body">• Locked test evidence</text>
+  <rect x="68" y="650" width="236" height="55" rx="12" fill="#167E6B"/>
+  <text x="186" y="674" text-anchor="middle" class="gate">GATE: REPRODUCIBLE</text>
+  <text x="186" y="695" text-anchor="middle" class="gate">AND LAWFUL DATA</text>
+
+  <!-- Phase 2 -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="225" width="282" height="510" rx="20" fill="#FFFFFF" stroke="#286D9C" stroke-width="3"/>
+    <rect x="350" y="225" width="282" height="62" rx="20" fill="#286D9C"/>
+    <rect x="350" y="267" width="282" height="20" fill="#286D9C"/>
+  </g>
+  <text x="377" y="265" class="phase" fill="#FFFFFF">PHASE 2 • HARDENING</text>
+  <circle cx="392" cy="333" r="27" fill="#DFEDF7"/>
+  <text x="383" y="342" class="cardtitle" fill="#286D9C">2</text>
+  <text x="429" y="328" class="cardtitle">Engineering</text>
+  <text x="429" y="358" class="cardtitle">Controls</text>
+  <text x="377" y="411" class="body">• Migration and real</text>
+  <text x="396" y="438" class="body">database tests</text>
+  <text x="377" y="476" class="body">• Production settings</text>
+  <text x="377" y="514" class="body">• Minimal retention and</text>
+  <text x="396" y="541" class="body">deletion controls</text>
+  <text x="377" y="579" class="body">• Threat modelling</text>
+  <rect x="373" y="650" width="236" height="55" rx="12" fill="#286D9C"/>
+  <text x="491" y="674" text-anchor="middle" class="gate">GATE: SECURITY AND</text>
+  <text x="491" y="695" text-anchor="middle" class="gate">PRIVACY REVIEW</text>
+
+  <!-- Phase 3 -->
+  <g filter="url(#shadow)">
+    <rect x="655" y="225" width="282" height="510" rx="20" fill="#FFFFFF" stroke="#80539A" stroke-width="3"/>
+    <rect x="655" y="225" width="282" height="62" rx="20" fill="#80539A"/>
+    <rect x="655" y="267" width="282" height="20" fill="#80539A"/>
+  </g>
+  <text x="682" y="265" class="phase" fill="#FFFFFF">PHASE 3 • VALIDATION</text>
+  <circle cx="697" cy="333" r="27" fill="#EEE5F3"/>
+  <text x="688" y="342" class="cardtitle" fill="#80539A">3</text>
+  <text x="734" y="328" class="cardtitle">Independent</text>
+  <text x="734" y="358" class="cardtitle">Evaluation</text>
+  <text x="682" y="411" class="body">• Complete hybrid</text>
+  <text x="701" y="438" class="body">benchmark</text>
+  <text x="682" y="476" class="body">• Adversarial and</text>
+  <text x="701" y="503" class="body">security testing</text>
+  <text x="682" y="541" class="body">• Browser, accessibility</text>
+  <text x="701" y="568" class="body">and participant study</text>
+  <rect x="678" y="650" width="236" height="55" rx="12" fill="#80539A"/>
+  <text x="796" y="674" text-anchor="middle" class="gate">GATE: PREDEFINED</text>
+  <text x="796" y="695" text-anchor="middle" class="gate">ACCEPTANCE CRITERIA</text>
+
+  <!-- Phase 4 -->
+  <g filter="url(#shadow)">
+    <rect x="960" y="225" width="282" height="510" rx="20" fill="#FFFFFF" stroke="#B56A16" stroke-width="3"/>
+    <rect x="960" y="225" width="282" height="62" rx="20" fill="#B56A16"/>
+    <rect x="960" y="267" width="282" height="20" fill="#B56A16"/>
+  </g>
+  <text x="987" y="265" class="phase" fill="#FFFFFF">PHASE 4 • PILOT</text>
+  <circle cx="1002" cy="333" r="27" fill="#F9EAD7"/>
+  <text x="993" y="342" class="cardtitle" fill="#B56A16">4</text>
+  <text x="1039" y="328" class="cardtitle">Governed</text>
+  <text x="1039" y="358" class="cardtitle">Pilot</text>
+  <text x="987" y="411" class="body">• Limited users and</text>
+  <text x="1006" y="438" class="body">minimal data</text>
+  <text x="987" y="476" class="body">• Monitoring and</text>
+  <text x="1006" y="503" class="body">incident response</text>
+  <text x="987" y="541" class="body">• Drift and error review</text>
+  <text x="987" y="579" class="body">• Defined stop criteria</text>
+  <rect x="983" y="650" width="236" height="55" rx="12" fill="#B56A16"/>
+  <text x="1101" y="674" text-anchor="middle" class="gate">GATE: PILOT EVIDENCE</text>
+  <text x="1101" y="695" text-anchor="middle" class="gate">AND GO/NO-GO REVIEW</text>
+
+  <!-- Phase 5 -->
+  <g filter="url(#shadow)">
+    <rect x="1265" y="225" width="290" height="510" rx="20" fill="#FFFFFF" stroke="#A6404C" stroke-width="3"/>
+    <rect x="1265" y="225" width="290" height="62" rx="20" fill="#A6404C"/>
+    <rect x="1265" y="267" width="290" height="20" fill="#A6404C"/>
+  </g>
+  <text x="1292" y="265" class="phase" fill="#FFFFFF">PHASE 5 • CONTROL</text>
+  <circle cx="1307" cy="333" r="27" fill="#F6E0E3"/>
+  <text x="1298" y="342" class="cardtitle" fill="#A6404C">5</text>
+  <text x="1344" y="328" class="cardtitle">Controlled</text>
+  <text x="1344" y="358" class="cardtitle">Deployment</text>
+  <text x="1292" y="411" class="body">• Versioned models</text>
+  <text x="1311" y="438" class="body">and rules</text>
+  <text x="1292" y="476" class="body">• Human oversight</text>
+  <text x="1292" y="514" class="body">• Rollback capability</text>
+  <text x="1292" y="552" class="body">• Periodic reassessment</text>
+  <rect x="1288" y="650" width="244" height="55" rx="12" fill="#A6404C"/>
+  <text x="1410" y="674" text-anchor="middle" class="gate">OUTCOME: BOUNDED</text>
+  <text x="1410" y="695" text-anchor="middle" class="gate">DECISION SUPPORT</text>
+
+  <rect x="45" y="785" width="1510" height="74" rx="18" fill="#E5EDF3" stroke="#B7C8D4" stroke-width="2"/>
+  <text x="800" y="817" text-anchor="middle" class="footer" font-weight="700">Gating rule: do not progress because a feature exists; progress only when the preceding evidence is reviewable.</text>
+  <text x="800" y="845" text-anchor="middle" class="footer">PhishGuard AI remains a prototype until data, security, privacy, effectiveness and user-safety gates are passed.</text>
+</svg>
