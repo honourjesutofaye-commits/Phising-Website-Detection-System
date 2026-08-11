@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Generate a standalone Word copy of the combined Chapters One–Five references."""
+"""Generate standard and large-print Word copies of the combined references."""
 
 from pathlib import Path
 
@@ -15,9 +15,10 @@ import generate_chapter_five as document_tools
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "report" / "Complete_Report_Source.md"
 OUTPUT = ROOT / "report" / "Combined_References_Chapters_One_to_Five.docx"
+LARGE_PRINT_OUTPUT = ROOT / "report" / "Combined_References_Chapters_One_to_Five_Large_Print.docx"
 
 
-def main():
+def load_references():
     source = SOURCE.read_text(encoding="utf-8")
     marker = "\n## REFERENCES\n"
     if source.count(marker) != 1:
@@ -25,7 +26,10 @@ def main():
     references = [entry.strip() for entry in source.split(marker, 1)[1].strip().split("\n\n") if entry.strip()]
     if len(references) != 35:
         raise ValueError(f"Expected 35 consolidated references, found {len(references)}")
+    return references
 
+
+def generate(output, references, reference_size=12, heading_size=14, large_print=False):
     document = Document()
     document_tools.configure_styles(document)
     section = document.sections[0]
@@ -37,16 +41,21 @@ def main():
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     heading.paragraph_format.space_after = Pt(18)
     run = heading.add_run("REFERENCES")
-    document_tools.set_run_font(run, size=14, bold=True)
+    document_tools.set_run_font(run, size=heading_size, bold=True)
 
+    reference_style = document.styles["PCU Reference"]
+    reference_style.font.size = Pt(reference_size)
     for reference in references:
-        document_tools.add_reference(document, reference)
+        paragraph = document.add_paragraph(style="PCU Reference")
+        document_tools.add_inline_markup(paragraph, reference, size=reference_size)
 
     properties = document.core_properties
-    properties.title = "Combined References — Chapters One to Five"
+    properties.title = "Combined References — Chapters One to Five" + (" — Large Print" if large_print else "")
     properties.subject = "Phishing Digital Medium Detection System Using Machine Learning"
     properties.author = "Honour Jesutofaye Jesutofaye"
-    properties.comments = "Alphabetised and deduplicated APA reference list from the complete project report."
+    properties.comments = (
+        "Large-print reading copy with 16-point references. " if large_print else ""
+    ) + "Alphabetised and deduplicated APA reference list from the complete project report."
 
     settings = document.settings._element
     node = settings.find(qn("w:updateFields"))
@@ -55,8 +64,14 @@ def main():
         settings.append(node)
     node.set(qn("w:val"), "true")
 
-    document.save(OUTPUT)
-    print(f"{OUTPUT}\n{len(references)} alphabetised, deduplicated references")
+    document.save(output)
+    print(f"{output}\n{len(references)} alphabetised, deduplicated references; {reference_size}-point text")
+
+
+def main():
+    references = load_references()
+    generate(OUTPUT, references, reference_size=12, heading_size=14)
+    generate(LARGE_PRINT_OUTPUT, references, reference_size=16, heading_size=18, large_print=True)
 
 
 if __name__ == "__main__":
